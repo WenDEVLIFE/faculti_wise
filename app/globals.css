@@ -1,19 +1,67 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Faculty_Wise Design System Tokens */
+  --bg: #f6f8fb;
+  --surface: #ffffff;
+  --surface-alt: #eef3f9;
+  --text: #10233f;
+  --text-muted: #4f5f75;
+
+  --primary: #0f6ba8;
+  --primary-strong: #0b4f7d;
+  --accent: #e6a700;
+
+  --success: #1f8a53;
+  --warning: #b7791f;
+  --danger: #c0392b;
+  --info: #2f76b7;
+
+  --border: #d7e0ec;
+  --focus: #0f6ba8;
+
+  --shadow-sm: 0 2px 8px rgba(16, 35, 63, 0.06);
+  --shadow-md: 0 8px 24px rgba(16, 35, 63, 0.12);
+  
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+
+  /* Tailwind compatibility mappings */
+  --background: var(--bg);
+  --foreground: var(--text);
+  
+  color-scheme: light;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-alt: var(--surface-alt);
+  --color-text: var(--text);
+  --color-text-muted: var(--text-muted);
+  
+  --color-primary: var(--primary);
+  --color-primary-strong: var(--primary-strong);
+  --color-accent: var(--accent);
+  
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+  --color-info: var(--info);
+  
+  --color-border: var(--border);
+  --color-focus: var(--focus);
+  
+  --shadow-sm: var(--shadow-sm);
+  --shadow-md: var(--shadow-md);
+  
+  --radius-sm: var(--radius-sm);
+  --radius-md: var(--radius-md);
+  --radius-lg: var(--radius-lg);
 
-:root {
-  color-scheme: light;
+  --font-manrope: var(--font-manrope);
+  --font-source-serif: var(--font-source-serif);
 }
 
 html {
@@ -21,13 +69,17 @@ html {
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-manrope), sans-serif;
   min-height: 100%;
 }
 
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-source-serif), serif;
+}
+
 ::selection {
-  background: rgba(245, 158, 11, 0.28);
-  color: #111827;
+  background: rgba(15, 107, 168, 0.1);
+  color: var(--primary-strong);
 }
