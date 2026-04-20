@@ -131,6 +131,16 @@ export default function LoginPageView() {
                 Continue with Google
               </button>
 
+              <Link
+                href={appRoutes.dashboard}
+                className="inline-flex h-12 w-full items-center justify-center gap-3 rounded-2xl border border-amber-200 bg-amber-50/50 px-5 text-sm font-semibold text-amber-900 transition hover:border-amber-300 hover:bg-amber-50"
+              >
+                <span className="flex h-5 w-5 items-center justify-center rounded-full border border-amber-300 text-[10px] font-bold text-amber-600">
+                  A
+                </span>
+                Test Access (Admin)
+              </Link>
+
               <p className="text-center text-sm text-stone-600">
                 New here?{" "}
                 <Link href={appRoutes.home} className="font-medium text-amber-700">
