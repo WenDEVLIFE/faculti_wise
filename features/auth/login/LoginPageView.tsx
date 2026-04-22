@@ -141,6 +141,16 @@ export default function LoginPageView() {
                 Test Access (Admin)
               </Link>
 
+              <Link
+                href={appRoutes.teacherDashboard}
+                className="inline-flex h-12 w-full items-center justify-center gap-3 rounded-2xl border border-teal-200 bg-teal-50/50 px-5 text-sm font-semibold text-teal-900 transition hover:border-teal-300 hover:bg-teal-50"
+              >
+                <span className="flex h-5 w-5 items-center justify-center rounded-full border border-teal-300 text-[10px] font-bold text-teal-600">
+                  T
+                </span>
+                Test Access (Teacher)
+              </Link>
+
               <p className="text-center text-sm text-stone-600">
                 New here?{" "}
                 <Link href={appRoutes.home} className="font-medium text-amber-700">
