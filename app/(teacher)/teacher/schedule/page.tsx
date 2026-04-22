@@ -1,18 +1,16 @@
 import * as React from "react";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
+import TimetableView from "@/features/timetables/TimetableView";
+import { Suspense } from "react";
+
+export const unstable_instant = { prefetch: "static" };
 
 export default function MySchedulePage() {
   return (
-    <div className="space-y-6">
-      <h1 className="text-3xl font-bold text-text font-source-serif">My Schedule</h1>
-      <Card>
-        <CardHeader>
-          <CardTitle>Individual Timetable</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-text-muted italic">Visual schedule grid implementation is pending.</p>
-        </CardContent>
-      </Card>
-    </div>
+    <Suspense fallback={<div className="animate-pulse h-[600px] bg-surface-alt rounded-xl" />}>
+      <TimetableView 
+        title="My Schedule" 
+        subtitle="Individual academic timetable for the current semester."
+      />
+    </Suspense>
   );
 }

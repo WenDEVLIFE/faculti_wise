@@ -146,7 +146,7 @@ export default function TeacherDashboard() {
             <div className="mt-6 p-4 rounded-lg bg-amber-50 border border-amber-100 flex items-center gap-3">
               <AlertCircle className="h-5 w-5 text-amber-600 shrink-0" />
               <p className="text-xs text-amber-800">
-                Next semester's availability window is currently <strong>open</strong>. Please submit your preferences before Oct 30.
+                Next semester&apos;s availability window is currently <strong>open</strong>. Please submit your preferences before Oct 30.
               </p>
               <ArrowRight className="h-4 w-4 text-amber-600 ml-auto" />
             </div>

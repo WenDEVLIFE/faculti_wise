@@ -1,9 +1,9 @@
 import * as React from "react";
-import { 
-  BookOpen, 
-  MapPin, 
-  Clock, 
-  Calendar, 
+import {
+  BookOpen,
+  MapPin,
+  Clock,
+  Calendar,
   ArrowRight,
   Sparkles
 } from "lucide-react";
@@ -55,7 +55,7 @@ export default function StudentDashboard() {
         <Card className="lg:col-span-2">
           <CardHeader>
             <div className="flex items-center justify-between">
-              <CardTitle>Today's Timeline</CardTitle>
+              <CardTitle>Today&apos;s Timeline</CardTitle>
               <Badge variant="outline" className="bg-indigo-50 border-indigo-200 text-indigo-700">
                 Monday, Oct 22
               </Badge>
