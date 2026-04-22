@@ -1,18 +1,13 @@
 import * as React from "react";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
+import SettingsView from "@/features/settings/SettingsView";
+import { Suspense } from "react";
+
+export const unstable_instant = { prefetch: "static" };
 
 export default function SettingsPage() {
   return (
-    <div className="space-y-6">
-      <h1 className="text-3xl font-bold text-text font-source-serif">Settings</h1>
-      <Card>
-        <CardHeader>
-          <CardTitle>System Configuration</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-text-muted italic">Settings and configuration module is under construction.</p>
-        </CardContent>
-      </Card>
-    </div>
+    <Suspense fallback={<div className="animate-pulse h-[600px] bg-surface-alt rounded-xl" />}>
+      <SettingsView />
+    </Suspense>
   );
 }
