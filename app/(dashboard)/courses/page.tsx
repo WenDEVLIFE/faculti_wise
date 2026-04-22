@@ -1,18 +1,17 @@
 import * as React from "react";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
+import CoursesView from "@/features/courses/CoursesView";
+import { Suspense } from "react";
+
+export const unstable_instant = { prefetch: "static" };
 
 export default function CoursesPage() {
   return (
-    <div className="space-y-6">
-      <h1 className="text-3xl font-bold text-text font-source-serif">Courses</h1>
-      <Card>
-        <CardHeader>
-          <CardTitle>Course Catalog</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-text-muted italic">Course management module is under construction.</p>
-        </CardContent>
-      </Card>
-    </div>
+    <Suspense fallback={<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      {Array.from({ length: 8 }).map((_, i) => (
+        <div key={i} className="h-64 animate-pulse bg-surface-alt rounded-2xl" />
+      ))}
+    </div>}>
+      <CoursesView />
+    </Suspense>
   );
 }
