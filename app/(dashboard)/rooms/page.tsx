@@ -1,18 +1,17 @@
 import * as React from "react";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
+import RoomsView from "@/features/rooms/RoomsView";
+import { Suspense } from "react";
+
+export const unstable_instant = { prefetch: "static" };
 
 export default function RoomsPage() {
   return (
-    <div className="space-y-6">
-      <h1 className="text-3xl font-bold text-text font-source-serif">Rooms & Labs</h1>
-      <Card>
-        <CardHeader>
-          <CardTitle>Resource Utilization</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-text-muted italic">Room and laboratory management module is under construction.</p>
-        </CardContent>
-      </Card>
-    </div>
+    <Suspense fallback={<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      {Array.from({ length: 8 }).map((_, i) => (
+        <div key={i} className="h-72 animate-pulse bg-surface-alt rounded-2xl" />
+      ))}
+    </div>}>
+      <RoomsView />
+    </Suspense>
   );
 }
