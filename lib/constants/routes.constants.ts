@@ -14,4 +14,10 @@ export const appRoutes = {
   teacherAvailability: "/teacher/availability",
   teacherDepartmentSchedule: "/teacher/department-schedule",
   teacherSettings: "/teacher/settings",
+
+  // Student Routes
+  studentDashboard: "/student",
+  studentSchedule: "/student/schedule",
+  studentDepartmentSchedule: "/student/department-schedule",
+  studentSettings: "/student/settings",
 } as const;
