@@ -151,6 +151,16 @@ export default function LoginPageView() {
                 Test Access (Teacher)
               </Link>
 
+              <Link
+                href={appRoutes.studentDashboard}
+                className="inline-flex h-12 w-full items-center justify-center gap-3 rounded-2xl border border-indigo-200 bg-indigo-50/50 px-5 text-sm font-semibold text-indigo-900 transition hover:border-indigo-300 hover:bg-indigo-50"
+              >
+                <span className="flex h-5 w-5 items-center justify-center rounded-full border border-indigo-300 text-[10px] font-bold text-indigo-600">
+                  S
+                </span>
+                Test Access (Student)
+              </Link>
+
               <p className="text-center text-sm text-stone-600">
                 New here?{" "}
                 <Link href={appRoutes.home} className="font-medium text-amber-700">
