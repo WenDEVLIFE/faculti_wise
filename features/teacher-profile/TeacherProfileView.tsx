@@ -20,7 +20,7 @@ export default function TeacherProfileView() {
       <div className="grid gap-8 lg:grid-cols-3">
         <div className="lg:col-span-2 space-y-8">
           <TeacherPersonalInfo />
-          
+
           <Card className="border-border/50 shadow-sm overflow-hidden bg-white/80 backdrop-blur-sm">
             <CardHeader className="bg-surface-alt/30 border-b border-border/50">
               <CardTitle className="text-lg">Recent Academic Activity</CardTitle>
