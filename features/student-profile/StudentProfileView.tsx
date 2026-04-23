@@ -3,7 +3,7 @@ import { StudentPersonalInfo } from "./components/StudentPersonalInfo";
 import { StudentAcademicOverview } from "./components/StudentAcademicOverview";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
-import { Bell, Shield, LogOut, ChevronRight, User, BookOpen } from "lucide-react";
+import { Bell, Shield, LogOut, ChevronRight, BookOpen } from "lucide-react";
 
 export default function StudentProfileView() {
   return (
