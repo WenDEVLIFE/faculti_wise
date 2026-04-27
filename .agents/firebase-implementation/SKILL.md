@@ -24,25 +24,160 @@ Design and implement the Firebase backend for Faculty_Wise to support real-time 
 ## Firestore Data Model
 Recommended top-level collections:
 - `users`
-- `faculty`
+- `departments`
+- `programs`
+- `teachers`
+- `students`
 - `courses`
 - `sections`
 - `rooms`
-- `labs`
 - `terms`
-- `availabilityProfiles`
-- `historicalAssignments`
+- `courseOfferings`
+- `timetableEntries`
+- `teacherAvailability`
+- `enrollments`
 - `optimizationRuns`
 - `scheduleVersions`
 - `publishedSchedules`
 - `auditLogs`
 
+## Database Collections and Fields (Data Dictionary)
+Use this as the implementation baseline for Firebase database work.
+
+### 1) `users/{uid}`
+- `email: string`
+- `displayName: string`
+- `role: "admin" | "teacher" | "student"`
+- `status: "active" | "inactive"`
+- `departmentId: string | null`
+- `createdAt: Timestamp`
+- `updatedAt: Timestamp`
+
+### 2) `departments/{departmentId}`
+- `code: string`
+- `name: string`
+- `chairUid: string | null` (ref `users/{uid}`)
+- `createdAt: Timestamp`
+
+### 3) `programs/{programId}`
+- `departmentId: string` (ref `departments/{departmentId}`)
+- `code: string`
+- `name: string`
+- `createdAt: Timestamp`
+
+### 4) `sections/{sectionId}`
+- `programId: string` (ref `programs/{programId}`)
+- `name: string` (ex: `BSCS-3A`)
+- `yearLevel: number`
+- `studentCount: number`
+
+### 5) `teachers/{teacherId}`
+- `uid: string` (ref `users/{uid}`)
+- `employeeNo: string`
+- `fullName: string`
+- `departmentId: string`
+- `designation: string`
+- `employmentType: string`
+- `specialization: string`
+- `officeLocation: string`
+- `targetUnits: number`
+
+### 6) `students/{studentId}`
+- `uid: string` (ref `users/{uid}`)
+- `studentNo: string`
+- `fullName: string`
+- `programId: string`
+- `sectionId: string | null`
+- `yearLevel: number`
+- `major: string | null`
+- `gpa: number | null`
+
+### 7) `courses/{courseId}`
+- `code: string`
+- `name: string`
+- `description: string`
+- `units: number`
+- `lectureHours: number`
+- `labHours: number`
+- `category: "major" | "minor" | "general" | "elective"`
+- `departmentId: string`
+- `isActive: boolean`
+
+### 8) `rooms/{roomId}`
+- `name: string`
+- `building: string`
+- `floor: number`
+- `capacity: number`
+- `type: "lecture" | "laboratory" | "seminar" | "auditorium"`
+- `status: "available" | "occupied" | "maintenance"`
+- `features: string[]`
+
+### 9) `terms/{termId}`
+- `academicYear: string` (ex: `2025-2026`)
+- `semester: string` (ex: `1st`, `2nd`, `Summer`)
+- `startDate: Timestamp`
+- `endDate: Timestamp`
+- `isCurrent: boolean`
+
+### 10) `courseOfferings/{offeringId}`
+- `courseId: string`
+- `sectionId: string`
+- `teacherId: string`
+- `termId: string`
+- `maxSlots: number`
+- `assignedUnits: number`
+- `status: "draft" | "published" | "archived"`
+
+### 11) `timetableEntries/{entryId}`
+- `offeringId: string`
+- `roomId: string`
+- `dayOfWeek: "Monday" | "Tuesday" | "Wednesday" | "Thursday" | "Friday" | "Saturday" | "Sunday"`
+- `startTime: string` (HH:mm)
+- `endTime: string` (HH:mm)
+- `sessionType: "lecture" | "lab" | "seminar" | "other"`
+- `isPublished: boolean`
+
+### 12) `teacherAvailability/{availabilityId}`
+- `teacherId: string`
+- `termId: string`
+- `lastUpdated: Timestamp`
+
+Subcollection: `teacherAvailability/{availabilityId}/slots/{slotId}`
+- `dayOfWeek: "Monday" | "Tuesday" | "Wednesday" | "Thursday" | "Friday" | "Saturday"`
+- `startTime: string` (HH:mm)
+- `endTime: string` (HH:mm)
+- `status: "preferred" | "available" | "unavailable"`
+
+### 13) `enrollments/{enrollmentId}`
+- `studentId: string`
+- `offeringId: string`
+- `enrolledAt: Timestamp`
+- `status: "enrolled" | "dropped" | "completed"`
+- `finalGrade: number | null`
+
+### 14) `auditLogs/{logId}`
+- `actorUid: string`
+- `action: string`
+- `resourceType: string`
+- `resourceId: string`
+- `metadata: map`
+- `createdAt: Timestamp`
+
+## Firestore Relationship Map (Reference by ID)
+- `departments` -> `programs` -> `sections`
+- `users` -> (`teachers` or `students` profile)
+- `departments` -> `courses`
+- `courses` + `sections` + `teachers` + `terms` -> `courseOfferings`
+- `courseOfferings` + `rooms` -> `timetableEntries`
+- `teachers` + `terms` -> `teacherAvailability` -> `slots`
+- `students` + `courseOfferings` -> `enrollments`
+
 Example document structure:
 1. `users/{uid}`
 - `displayName`, `email`, `role`, `departmentId`, `active`
 
-2. `faculty/{facultyId}`
-- `userId`, `specializations[]`, `certifications[]`, `minLoad`, `maxLoad`, `preferredSlots[]`
+2. `teachers/{teacherId}`
+- `uid`, `employeeNo`, `departmentId`, `designation`, `targetUnits`
 
 3. `optimizationRuns/{runId}`
 - `termId`, `status`, `weights`, `startedBy`, `startedAt`, `completedAt`, `topVersionIds[]`, `metrics`
@@ -55,7 +190,10 @@ Example document structure:
 
 ## Indexing Strategy
 Create composite indexes for common query paths:
-- `faculty` by `departmentId + active`
+- `teachers` by `departmentId + uid`
+- `courseOfferings` by `termId + teacherId`
+- `timetableEntries` by `roomId + dayOfWeek + startTime`
+- `enrollments` by `studentId + status`
 - `scheduleVersions` by `runId + score(desc)`
 - `optimizationRuns` by `termId + status + startedAt(desc)`
 - `publishedSchedules` by `termId`
