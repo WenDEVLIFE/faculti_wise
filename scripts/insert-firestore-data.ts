@@ -24,7 +24,7 @@ const collections = {
       email: 'john.smith@university.edu',
       role: 'teacher',
       department: 'Computer Science',
-      createdAt: new Date().toISOString(),
+      createdAt: new Date(),
     },
     {
       id: 'user-002',
@@ -32,7 +32,7 @@ const collections = {
       email: 'sarah.johnson@university.edu',
       role: 'teacher',
       department: 'Mathematics',
-      createdAt: new Date().toISOString(),
+      createdAt: new Date(),
     },
     {
       id: 'user-003',
@@ -40,7 +40,7 @@ const collections = {
       email: 'alice.brown@university.edu',
       role: 'student',
       department: 'Computer Science',
-      createdAt: new Date().toISOString(),
+      createdAt: new Date(),
     },
   ],
   schedules: [
@@ -113,7 +113,7 @@ async function insertData() {
         const response = await axios.patch(
           url,
           {
-            fields: Object.entries(doc).reduce((acc, [key, value]) => {
+            fields: Object.entries(doc).reduce((acc, [key, value]: [string, any]) => {
               if (key === 'id') return acc;
               
               let fieldValue: any = {};
