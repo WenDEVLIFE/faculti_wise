@@ -10,7 +10,7 @@
           "type": "string",
           "description": "Unique user identifier"
         },
-        "name": {
+        "displayName": {
           "type": "string",
           "minLength": 1,
           "description": "User's full name"
@@ -22,21 +22,32 @@
         },
         "role": {
           "type": "string",
-          "enum": ["teacher", "student", "admin"],
+          "enum": ["admin", "teacher", "student"],
           "description": "User's role in the system"
         },
-        "department": {
+        "status": {
           "type": "string",
-          "minLength": 1,
-          "description": "Department name"
+          "enum": ["active", "inactive"],
+          "description": "User account status"
+        },
+        "departmentId": {
+          "type": ["string", "null"],
+          "description": "Department ID reference"
         },
         "createdAt": {
-          "type": "string",
-          "format": "date-time",
-          "description": "ISO 8601 timestamp"
+          "type": "object",
+          "description": "Firestore Timestamp"
+        },
+        "updatedAt": {
+          "type": "object",
+          "description": "Firestore Timestamp"
+        },
+        "photoURL": {
+          "type": ["string", "null"],
+          "description": "User's profile picture URL"
         }
       },
-      "required": ["id", "name", "email", "role", "department", "createdAt"],
+      "required": ["id", "displayName", "email", "role", "status", "createdAt", "updatedAt"],
       "additionalProperties": false
     },
     "schedule": {

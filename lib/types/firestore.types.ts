@@ -1,11 +1,13 @@
-// User collection schema
 export interface User {
   id: string;
-  name: string;
   email: string;
-  role: 'teacher' | 'student' | 'admin';
-  department: string;
-  createdAt: string;
+  displayName: string;
+  role: 'admin' | 'teacher' | 'student';
+  status: 'active' | 'inactive';
+  departmentId: string | null;
+  createdAt: any; // Firestore Timestamp
+  updatedAt: any; // Firestore Timestamp
+  photoURL?: string | null;
 }
 
 // Schedule collection schema
