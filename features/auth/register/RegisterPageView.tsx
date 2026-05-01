@@ -13,7 +13,6 @@ export default function RegisterPageView() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
-  const [role, setRole] = useState<'teacher' | 'student'>('student');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -30,7 +29,7 @@ export default function RegisterPageView() {
         id: user.uid,
         email: user.email,
         displayName: displayName,
-        role: role,
+        role: 'student',
         status: 'active',
         departmentId: null,
         createdAt: serverTimestamp(),
@@ -57,27 +56,27 @@ export default function RegisterPageView() {
               </p>
               <div className="space-y-4">
                 <h1 className="text-4xl font-semibold tracking-tight sm:text-5xl">
-                  Join the academic operations hub.
+                  Student Portal Registration
                 </h1>
                 <p className="max-w-lg text-base leading-7 text-stone-300 sm:text-lg">
-                  Create an account to start managing your academic schedule, 
-                  assignments, and department collaborations in one place.
+                  Create your student account to access your academic schedule, 
+                  view department announcements, and manage your enrollment.
                 </p>
               </div>
             </div>
 
             <div className="grid gap-4 sm:grid-cols-3">
               <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                <p className="text-sm text-stone-300">Smart Scheduling</p>
-                <p className="mt-2 text-2xl font-semibold">Fast</p>
+                <p className="text-sm text-stone-300">Schedules</p>
+                <p className="mt-2 text-2xl font-semibold">Real-time</p>
               </div>
               <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                <p className="text-sm text-stone-300">Conflict Checks</p>
-                <p className="mt-2 text-2xl font-semibold">Auto</p>
+                <p className="text-sm text-stone-300">Updates</p>
+                <p className="mt-2 text-2xl font-semibold">Instant</p>
               </div>
               <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                <p className="text-sm text-stone-300">Collaboration</p>
-                <p className="mt-2 text-2xl font-semibold">Live</p>
+                <p className="text-sm text-stone-300">Support</p>
+                <p className="mt-2 text-2xl font-semibold">Direct</p>
               </div>
             </div>
           </div>
@@ -90,10 +89,10 @@ export default function RegisterPageView() {
                 Get started
               </p>
               <h2 className="text-3xl font-semibold tracking-tight text-stone-950">
-                Create your account
+                Student Registration
               </h2>
               <p className="text-sm leading-6 text-stone-600">
-                Enter your details below to create your academic profile.
+                Teachers must be registered by their department administrator.
               </p>
             </div>
 
@@ -112,7 +111,7 @@ export default function RegisterPageView() {
                   id="displayName"
                   type="text"
                   required
-                  placeholder="Dr. John Doe"
+                  placeholder="e.g. Jane Smith"
                   value={displayName}
                   onChange={(e) => setDisplayName(e.target.value)}
                   className="h-12 w-full rounded-2xl border border-stone-200 bg-white px-4 text-stone-900 outline-none transition placeholder:text-stone-400 focus:border-amber-400 focus:ring-4 focus:ring-amber-100"
@@ -128,7 +127,7 @@ export default function RegisterPageView() {
                   type="email"
                   required
                   autoComplete="email"
-                  placeholder="name@university.edu"
+                  placeholder="student@university.edu"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="h-12 w-full rounded-2xl border border-stone-200 bg-white px-4 text-stone-900 outline-none transition placeholder:text-stone-400 focus:border-amber-400 focus:ring-4 focus:ring-amber-100"
@@ -151,40 +150,12 @@ export default function RegisterPageView() {
                 />
               </div>
 
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-stone-700">I am a...</label>
-                <div className="grid grid-cols-2 gap-4">
-                  <button
-                    type="button"
-                    onClick={() => setRole('teacher')}
-                    className={`h-12 rounded-2xl border transition-all ${
-                      role === 'teacher' 
-                        ? 'border-amber-400 bg-amber-50 text-amber-900 ring-4 ring-amber-100' 
-                        : 'border-stone-200 bg-white text-stone-600 hover:border-stone-300'
-                    }`}
-                  >
-                    Teacher
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setRole('student')}
-                    className={`h-12 rounded-2xl border transition-all ${
-                      role === 'student' 
-                        ? 'border-indigo-400 bg-indigo-50 text-indigo-900 ring-4 ring-indigo-100' 
-                        : 'border-stone-200 bg-white text-stone-600 hover:border-stone-300'
-                    }`}
-                  >
-                    Student
-                  </button>
-                </div>
-              </div>
-
               <button
                 type="submit"
                 disabled={loading}
                 className="inline-flex h-12 w-full items-center justify-center rounded-2xl bg-stone-950 px-5 text-sm font-semibold text-white transition hover:bg-stone-800 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {loading ? "Creating account..." : "Create account"}
+                {loading ? "Registering..." : "Register as Student"}
               </button>
 
               <p className="text-center text-sm text-stone-600">
