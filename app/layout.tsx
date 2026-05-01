@@ -17,6 +17,8 @@ export const metadata: Metadata = {
   description: "Faculty scheduling and load management for academic teams.",
 };
 
+import { AuthProvider } from "@/lib/context/AuthContext";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -27,7 +29,11 @@ export default function RootLayout({
       lang="en"
       className={`${manrope.variable} ${sourceSerif.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        <AuthProvider>
+          {children}
+        </AuthProvider>
+      </body>
     </html>
   );
 }

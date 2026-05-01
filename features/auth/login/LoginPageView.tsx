@@ -2,7 +2,47 @@ import Link from "next/link";
 
 import { appRoutes } from "@/lib/constants/routes.constants";
 
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { signInWithEmailAndPassword } from "firebase/auth";
+import { auth } from "@/lib/firebase";
+import { useAuth } from "@/lib/context/AuthContext";
+
 export default function LoginPageView() {
+  const router = useRouter();
+  const { signInWithGoogle } = useAuth();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setLoading(true);
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+      router.push(appRoutes.dashboard);
+    } catch (err: any) {
+      setError(err.message || "Failed to sign in. Please check your credentials.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    setError(null);
+    setLoading(true);
+    try {
+      await signInWithGoogle();
+      router.push(appRoutes.dashboard);
+    } catch (err: any) {
+      setError(err.message || "Failed to sign in with Google.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <main className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(45,212,191,0.12),_transparent_30%),radial-gradient(circle_at_bottom_right,_rgba(245,158,11,0.16),_transparent_34%),linear-gradient(180deg,_#fffaf1_0%,_#f3efe6_100%)] px-6 py-8 text-stone-900 sm:px-8 lg:px-10">
       <div className="mx-auto grid min-h-[calc(100vh-4rem)] w-full max-w-7xl gap-8 lg:grid-cols-[1fr_0.95fr]">
@@ -56,7 +96,12 @@ export default function LoginPageView() {
               </p>
             </div>
 
-            <form className="mt-8 space-y-5">
+            <form className="mt-8 space-y-5" onSubmit={handleLogin}>
+              {error && (
+                <div className="rounded-xl bg-red-50 p-4 text-sm text-red-600 border border-red-100">
+                  {error}
+                </div>
+              )}
               <div className="space-y-2">
                 <label
                   htmlFor="email"
@@ -68,8 +113,11 @@ export default function LoginPageView() {
                   id="email"
                   name="email"
                   type="email"
+                  required
                   autoComplete="email"
                   placeholder="name@university.edu"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   className="h-12 w-full rounded-2xl border border-stone-200 bg-white px-4 text-stone-900 outline-none transition placeholder:text-stone-400 focus:border-amber-400 focus:ring-4 focus:ring-amber-100"
                 />
               </div>
@@ -85,8 +133,11 @@ export default function LoginPageView() {
                   id="password"
                   name="password"
                   type="password"
+                  required
                   autoComplete="current-password"
                   placeholder="Enter your password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                   className="h-12 w-full rounded-2xl border border-stone-200 bg-white px-4 text-stone-900 outline-none transition placeholder:text-stone-400 focus:border-amber-400 focus:ring-4 focus:ring-amber-100"
                 />
               </div>
@@ -110,9 +161,10 @@ export default function LoginPageView() {
 
               <button
                 type="submit"
-                className="inline-flex h-12 w-full items-center justify-center rounded-2xl bg-stone-950 px-5 text-sm font-semibold text-white transition hover:bg-stone-800"
+                disabled={loading}
+                className="inline-flex h-12 w-full items-center justify-center rounded-2xl bg-stone-950 px-5 text-sm font-semibold text-white transition hover:bg-stone-800 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Sign in
+                {loading ? "Signing in..." : "Sign in"}
               </button>
 
               <div className="flex items-center gap-4 text-xs uppercase tracking-[0.3em] text-stone-400">
@@ -123,7 +175,9 @@ export default function LoginPageView() {
 
               <button
                 type="button"
-                className="inline-flex h-12 w-full items-center justify-center gap-3 rounded-2xl border border-stone-200 bg-white px-5 text-sm font-semibold text-stone-800 transition hover:border-stone-300 hover:bg-stone-50"
+                onClick={handleGoogleSignIn}
+                disabled={loading}
+                className="inline-flex h-12 w-full items-center justify-center gap-3 rounded-2xl border border-stone-200 bg-white px-5 text-sm font-semibold text-stone-800 transition hover:border-stone-300 hover:bg-stone-50 disabled:opacity-50"
               >
                 <span className="flex h-5 w-5 items-center justify-center rounded-full border border-stone-300 text-[10px] font-bold text-stone-500">
                   G
@@ -163,8 +217,8 @@ export default function LoginPageView() {
 
               <p className="text-center text-sm text-stone-600">
                 New here?{" "}
-                <Link href={appRoutes.home} className="font-medium text-amber-700">
-                  Learn more about Faculty Wise
+                <Link href="/register" className="font-medium text-amber-700">
+                  Create an account
                 </Link>
               </p>
             </form>
