@@ -6,12 +6,10 @@ import { useRouter } from "next/navigation";
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from "@/lib/firebase";
-import { useAuth } from "@/lib/context/AuthContext";
 import { appRoutes } from "@/lib/constants/routes.constants";
 
 export default function RegisterPageView() {
   const router = useRouter();
-  const { signInWithGoogle } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
@@ -42,19 +40,6 @@ export default function RegisterPageView() {
       router.push(appRoutes.dashboard);
     } catch (err: any) {
       setError(err.message || "Failed to create account.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleGoogleSignIn = async () => {
-    setError(null);
-    setLoading(true);
-    try {
-      await signInWithGoogle();
-      router.push(appRoutes.dashboard);
-    } catch (err: any) {
-      setError(err.message || "Failed to sign in with Google.");
     } finally {
       setLoading(false);
     }
@@ -200,24 +185,6 @@ export default function RegisterPageView() {
                 className="inline-flex h-12 w-full items-center justify-center rounded-2xl bg-stone-950 px-5 text-sm font-semibold text-white transition hover:bg-stone-800 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? "Creating account..." : "Create account"}
-              </button>
-
-              <div className="flex items-center gap-4 text-xs uppercase tracking-[0.3em] text-stone-400">
-                <span className="h-px flex-1 bg-stone-200" />
-                or
-                <span className="h-px flex-1 bg-stone-200" />
-              </div>
-
-              <button
-                type="button"
-                onClick={handleGoogleSignIn}
-                disabled={loading}
-                className="inline-flex h-12 w-full items-center justify-center gap-3 rounded-2xl border border-stone-200 bg-white px-5 text-sm font-semibold text-stone-800 transition hover:border-stone-300 hover:bg-stone-50 disabled:opacity-50"
-              >
-                <span className="flex h-5 w-5 items-center justify-center rounded-full border border-stone-300 text-[10px] font-bold text-stone-500">
-                  G
-                </span>
-                Sign up with Google
               </button>
 
               <p className="text-center text-sm text-stone-600">
