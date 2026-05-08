@@ -21,6 +21,7 @@ const navigation = [
   { name: "Faculty Load", href: "/faculty-load", icon: Users },
   { name: "Courses", href: "/courses", icon: BookOpen },
   { name: "Rooms & Labs", href: "/rooms", icon: Building2 },
+  { name: "Users", href: "/users", icon: Users },
   { name: "Settings", href: "/settings", icon: Settings },
 ];
 

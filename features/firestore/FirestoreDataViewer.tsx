@@ -53,11 +53,11 @@ export function FirestoreDataViewer() {
             <div className="grid gap-4">
               {users.map(user => (
                 <Card key={user.id} className="p-4">
-                  <h3 className="font-semibold">{user.name}</h3>
+                  <h3 className="font-semibold">{user.displayName}</h3>
                   <p className="text-sm text-gray-600">{user.email}</p>
                   <div className="mt-2 flex gap-4 text-sm">
                     <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded">{user.role}</span>
-                    <span className="bg-gray-100 text-gray-800 px-2 py-1 rounded">{user.department}</span>
+                    <span className="bg-gray-100 text-gray-800 px-2 py-1 rounded">{user.departmentId}</span>
                   </div>
                 </Card>
               ))}

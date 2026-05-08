@@ -7,6 +7,7 @@ export const appRoutes = {
   courses: "/courses",
   rooms: "/rooms",
   settings: "/settings",
+  users: "/users",
 
   // Teacher Routes
   teacherDashboard: "/teacher",
