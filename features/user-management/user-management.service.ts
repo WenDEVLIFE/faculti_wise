@@ -15,7 +15,8 @@ import {
   serverTimestamp,
   getDoc,
   deleteDoc,
-  updateDoc
+  updateDoc,
+  onSnapshot
 } from "firebase/firestore";
 import { initializeApp, getApp, getApps } from "firebase/app";
 import { db } from "@/lib/firebase";
@@ -55,6 +56,24 @@ export const userManagementService = {
     });
   },
 
+  subscribeUsers(onUpdate: (users: User[]) => void): () => void {
+    const usersRef = collection(db, "users");
+    const q = query(usersRef, orderBy("createdAt", "desc"));
+    
+    return onSnapshot(q, (querySnapshot) => {
+      const users = querySnapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+          ...data,
+          id: doc.id,
+          displayName: data.displayName || data.name || "Unknown User",
+          email: data.email || "",
+        } as User;
+      });
+      onUpdate(users);
+    });
+  },
+
   async createManagedUser(data: {
     email: string;
     displayName: string;
@@ -62,37 +81,57 @@ export const userManagementService = {
     password: string;
     departmentId?: string | null;
   }): Promise<User> {
+    // 1. Validation
+    if (!data.displayName || data.displayName.trim() === "") {
+      throw new Error("Display name is required.");
+    }
+
+    if (!data.email || !data.email.includes("@")) {
+      throw new Error("A valid email address is required.");
+    }
+
     const secondaryAuth = getSecondaryAuth();
     
-    // 1. Create account in Firebase Auth (using secondary app to avoid logging out admin)
-    const userCredential = await createUserWithEmailAndPassword(
-      secondaryAuth, 
-      data.email, 
-      data.password
-    );
-    const fbUser = userCredential.user;
+    try {
+      // 2. Create account in Firebase Auth
+      // This will automatically throw 'auth/email-already-in-use' if email exists
+      const userCredential = await createUserWithEmailAndPassword(
+        secondaryAuth, 
+        data.email, 
+        data.password
+      );
+      const fbUser = userCredential.user;
 
-    // 2. Set display name in Auth profile
-    await updateProfile(fbUser, { displayName: data.displayName });
+      // 3. Set display name in Auth profile
+      await updateProfile(fbUser, { displayName: data.displayName });
 
-    // 3. Create profile in Firestore
-    const newUser: User = {
-      id: fbUser.uid,
-      email: data.email,
-      displayName: data.displayName,
-      role: data.role,
-      status: 'active',
-      departmentId: data.departmentId || null,
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
-    };
+      // 4. Create profile in Firestore
+      const newUser: User = {
+        id: fbUser.uid,
+        email: data.email,
+        displayName: data.displayName,
+        role: data.role,
+        status: 'active',
+        departmentId: data.departmentId || null,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      };
 
-    await setDoc(doc(db, "users", fbUser.uid), newUser);
+      await setDoc(doc(db, "users", fbUser.uid), newUser);
 
-    // 4. Sign out from secondary auth immediately
-    await secondaryAuth.signOut();
+      // 5. Sign out from secondary auth
+      await secondaryAuth.signOut();
 
-    return newUser;
+      return newUser;
+    } catch (error: any) {
+      if (error.code === 'auth/email-already-in-use') {
+        throw new Error("This email is already registered.");
+      }
+      if (error.code === 'auth/weak-password') {
+        throw new Error("The password is too weak.");
+      }
+      throw error;
+    }
   },
 
   async deleteUser(userId: string): Promise<void> {

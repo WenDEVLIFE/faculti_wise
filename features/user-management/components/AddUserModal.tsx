@@ -8,10 +8,9 @@ import { userManagementService } from "../user-management.service";
 interface AddUserModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSuccess: () => void;
 }
 
-export function AddUserModal({ isOpen, onClose, onSuccess }: AddUserModalProps) {
+export function AddUserModal({ isOpen, onClose }: AddUserModalProps) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
@@ -33,7 +32,6 @@ export function AddUserModal({ isOpen, onClose, onSuccess }: AddUserModalProps) 
         role,
         password,
       });
-      onSuccess();
       onClose();
       // Reset form
       setEmail("");

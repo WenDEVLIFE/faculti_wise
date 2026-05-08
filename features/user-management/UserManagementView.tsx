@@ -29,20 +29,14 @@ export default function UserManagementView() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
-  const loadUsers = async () => {
-    setLoading(true);
-    try {
-      const data = await userManagementService.fetchUsers();
-      setUsers(data);
-    } catch (error) {
-      console.error("Failed to fetch users:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
-    loadUsers();
+    setLoading(true);
+    const unsubscribe = userManagementService.subscribeUsers((data) => {
+      setUsers(data);
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
   }, []);
 
   const filteredUsers = users.filter(user => {
@@ -172,7 +166,6 @@ export default function UserManagementView() {
       <AddUserModal 
         isOpen={isModalOpen} 
         onClose={() => setIsModalOpen(false)} 
-        onSuccess={loadUsers}
       />
     </div>
   );
