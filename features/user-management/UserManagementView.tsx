@@ -45,10 +45,12 @@ export default function UserManagementView() {
     loadUsers();
   }, []);
 
-  const filteredUsers = users.filter(user => 
-    user.displayName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    user.email.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredUsers = users.filter(user => {
+    const displayName = (user.displayName || (user as any).name || "").toLowerCase();
+    const email = (user.email || "").toLowerCase();
+    const query = searchQuery.toLowerCase();
+    return displayName.includes(query) || email.includes(query);
+  });
 
   const stats = {
     total: users.length,
@@ -131,12 +133,12 @@ export default function UserManagementView() {
                       <td className="px-8 py-4">
                         <div className="flex items-center gap-4">
                           <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary font-bold">
-                            {user.displayName.charAt(0).toUpperCase()}
+                            {(user.displayName || (user as any).name || "U").charAt(0).toUpperCase()}
                           </div>
                           <div className="flex flex-col">
-                            <span className="font-semibold text-text">{user.displayName}</span>
+                            <span className="font-semibold text-text">{user.displayName || (user as any).name || "Unknown User"}</span>
                             <span className="text-xs text-text-muted flex items-center gap-1">
-                              <Mail className="h-3 w-3" /> {user.email}
+                              <Mail className="h-3 w-3" /> {user.email || "No email"}
                             </span>
                           </div>
                         </div>

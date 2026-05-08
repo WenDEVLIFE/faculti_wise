@@ -44,10 +44,15 @@ export const userManagementService = {
     const q = query(usersRef, orderBy("createdAt", "desc"));
     const querySnapshot = await getDocs(q);
     
-    return querySnapshot.docs.map(doc => ({
-      ...doc.data(),
-      id: doc.id,
-    } as User));
+    return querySnapshot.docs.map(doc => {
+      const data = doc.data();
+      return {
+        ...data,
+        id: doc.id,
+        displayName: data.displayName || data.name || "Unknown User",
+        email: data.email || "",
+      } as User;
+    });
   },
 
   async createManagedUser(data: {
