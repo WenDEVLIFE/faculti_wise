@@ -21,6 +21,7 @@ import {
 import { initializeApp, getApp, getApps } from "firebase/app";
 import { db } from "@/lib/firebase";
 import { User } from "@/lib/types/firestore.types";
+import { auditService } from "../audit/audit.service";
 
 // Secondary Firebase app for administrative user creation
 const firebaseConfig = {
@@ -80,7 +81,7 @@ export const userManagementService = {
     role: 'admin' | 'teacher' | 'student';
     password: string;
     departmentId?: string | null;
-  }): Promise<User> {
+  }, performingUser?: User): Promise<User> {
     // 1. Validation
     if (!data.displayName || data.displayName.trim() === "") {
       throw new Error("Display name is required.");
@@ -122,6 +123,17 @@ export const userManagementService = {
       // 5. Sign out from secondary auth
       await secondaryAuth.signOut();
 
+      // 6. Audit Log
+      if (performingUser) {
+        await auditService.logAction({
+          action: 'USER_CREATE',
+          targetId: newUser.id,
+          targetType: 'user',
+          details: { role: newUser.role, email: newUser.email },
+          performedBy: performingUser
+        });
+      }
+
       return newUser;
     } catch (error: any) {
       if (error.code === 'auth/email-already-in-use') {
@@ -134,17 +146,54 @@ export const userManagementService = {
     }
   },
 
-  async deleteUser(userId: string): Promise<void> {
+  async deleteUser(userId: string, performingUser?: User): Promise<void> {
     // Note: This only deletes from Firestore. 
     // Deleting from Auth requires Admin SDK or the user being logged in.
     // For now, we'll mark as inactive or delete from Firestore.
     await deleteDoc(doc(db, "users", userId));
+
+    if (performingUser) {
+      await auditService.logAction({
+        action: 'USER_DELETE',
+        targetId: userId,
+        targetType: 'user',
+        details: { },
+        performedBy: performingUser
+      });
+    }
   },
 
-  async updateUserStatus(userId: string, status: 'active' | 'inactive'): Promise<void> {
+  async updateUserStatus(userId: string, status: 'active' | 'inactive', performingUser?: User): Promise<void> {
     await updateDoc(doc(db, "users", userId), {
       status,
       updatedAt: serverTimestamp(),
     });
+
+    if (performingUser) {
+      await auditService.logAction({
+        action: 'USER_STATUS_CHANGE',
+        targetId: userId,
+        targetType: 'user',
+        details: { status },
+        performedBy: performingUser
+      });
+    }
+  },
+
+  async updateUserRole(userId: string, role: 'admin' | 'teacher' | 'student', performingUser?: User): Promise<void> {
+    await updateDoc(doc(db, "users", userId), {
+      role,
+      updatedAt: serverTimestamp(),
+    });
+
+    if (performingUser) {
+      await auditService.logAction({
+        action: 'USER_ROLE_CHANGE',
+        targetId: userId,
+        targetType: 'user',
+        details: { role },
+        performedBy: performingUser
+      });
+    }
   }
 };
