@@ -22,6 +22,7 @@ import { AddUserModal } from "./components/AddUserModal";
 import { userManagementService } from "./user-management.service";
 import { User } from "@/lib/types/firestore.types";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/lib/context/AuthContext";
 
 export default function UserManagementView() {
   const [users, setUsers] = useState<User[]>([]);
@@ -38,6 +39,27 @@ export default function UserManagementView() {
 
     return () => unsubscribe();
   }, []);
+
+  const { profile } = useAuth();
+
+  const handleToggleStatus = async (user: User) => {
+    const newStatus = user.status === 'active' ? 'inactive' : 'active';
+    try {
+      await userManagementService.updateUserStatus(user.id, newStatus, profile || undefined);
+    } catch (error) {
+      console.error("Failed to update status:", error);
+    }
+  };
+
+  const handleDeleteUser = async (userId: string) => {
+    if (window.confirm("Are you sure you want to delete this user? This action cannot be undone.")) {
+      try {
+        await userManagementService.deleteUser(userId, profile || undefined);
+      } catch (error) {
+        console.error("Failed to delete user:", error);
+      }
+    }
+  };
 
   const filteredUsers = users.filter(user => {
     const displayName = (user.displayName || (user as any).name || "").toLowerCase();
@@ -150,9 +172,24 @@ export default function UserManagementView() {
                         </span>
                       </td>
                       <td className="px-8 py-4 text-right">
-                        <button className="p-2 rounded-lg hover:bg-surface-alt text-text-muted hover:text-text transition-colors">
-                          <MoreVertical className="h-5 w-5" />
-                        </button>
+                        <div className="flex items-center justify-end gap-2">
+                          <Button 
+                            variant="secondary" 
+                            size="sm" 
+                            className="h-8 px-3 text-xs"
+                            onClick={() => handleToggleStatus(user)}
+                          >
+                            {user.status === 'active' ? 'Deactivate' : 'Activate'}
+                          </Button>
+                          <Button 
+                            variant="secondary" 
+                            size="icon" 
+                            className="h-8 w-8 text-rose-500 hover:text-rose-600 hover:bg-rose-50"
+                            onClick={() => handleDeleteUser(user.id)}
+                          >
+                            <XCircle className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </td>
                     </tr>
                   ))

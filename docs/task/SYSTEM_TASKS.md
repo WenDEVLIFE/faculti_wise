@@ -3,9 +3,9 @@
 This document tracks the core system and infrastructure tasks for Faculty_Wise.
 
 ## 1. Backend & Security
-- [ ] **Firestore Security Rules**: Implement granular role-based access control (RBAC) following the deny-by-default principle.
-- [ ] **Custom Claims Integration**: Set up Cloud Functions to manage `admin`, `teacher`, and `student` claims in Firebase Auth.
-- [ ] **Data Validation Schemas**: Implement Zod/AJV validation for all Firestore writes via Cloud Functions or Client SDK hooks.
+- [x] **Firestore Security Rules**: Implement granular role-based access control (RBAC) following the deny-by-default principle.
+- [x] **Custom Claims Integration**: Set up Cloud Functions to manage `admin`, `teacher`, and `student` claims in Firebase Auth.
+- [x] **Data Validation Schemas**: Implement Zod/AJV validation for all Firestore writes via Cloud Functions or Client SDK hooks.
 - [ ] **Audit Logging System**: Create a centralized service to record sensitive operations (role changes, schedule publishing, data imports).
 
 ## 2. Institutional Data Management

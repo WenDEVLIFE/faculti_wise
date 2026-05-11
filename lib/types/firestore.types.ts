@@ -39,3 +39,29 @@ export interface Room {
   type: 'lecture' | 'laboratory' | 'seminar';
   building: string;
 }
+
+// Audit Log collection schema
+export interface AuditLog {
+  id: string;
+  timestamp: any; // Firestore Timestamp
+  userId: string;
+  userName: string;
+  userEmail: string;
+  action: AuditAction;
+  targetId: string;
+  targetType: string;
+  details: Record<string, any>;
+  metadata?: {
+    ip?: string;
+    userAgent?: string;
+  };
+}
+
+export type AuditAction = 
+  | 'USER_CREATE'
+  | 'USER_DELETE'
+  | 'USER_ROLE_CHANGE'
+  | 'USER_STATUS_CHANGE'
+  | 'SCHEDULE_PUBLISH'
+  | 'DATA_IMPORT'
+  | 'SETTINGS_UPDATE';

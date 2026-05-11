@@ -12,7 +12,8 @@ import {
   Building2,
   Settings,
   Menu,
-  GraduationCap
+  GraduationCap,
+  History
 } from "lucide-react";
 
 const navigation = [
@@ -22,6 +23,7 @@ const navigation = [
   { name: "Courses", href: "/courses", icon: BookOpen },
   { name: "Rooms & Labs", href: "/rooms", icon: Building2 },
   { name: "Users", href: "/users", icon: Users },
+  { name: "Audit Logs", href: "/audit", icon: History },
   { name: "Settings", href: "/settings", icon: Settings },
 ];
 

@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { X, UserPlus, Mail, Lock, Shield, User as UserIcon } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { userManagementService } from "../user-management.service";
+import { useAuth } from "@/lib/context/AuthContext";
 
 interface AddUserModalProps {
   isOpen: boolean;
@@ -17,6 +18,7 @@ export function AddUserModal({ isOpen, onClose }: AddUserModalProps) {
   const [role, setRole] = useState<'admin' | 'teacher' | 'student'>('student');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { profile } = useAuth();
 
   if (!isOpen) return null;
 
@@ -31,7 +33,7 @@ export function AddUserModal({ isOpen, onClose }: AddUserModalProps) {
         displayName,
         role,
         password,
-      });
+      }, profile || undefined);
       onClose();
       // Reset form
       setEmail("");
