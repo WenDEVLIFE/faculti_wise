@@ -1,28 +1,37 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { ProfileSettings } from "./components/ProfileSettings";
 import { InstitutionSettings } from "./components/InstitutionSettings";
 import { SecuritySettings } from "./components/SecuritySettings";
 import { cn } from "@/lib/utils";
 import { User, Building2, Shield } from "lucide-react";
+import { useAuth } from "@/lib/context/AuthContext";
 
 type SettingsTab = "profile" | "institution" | "security";
 
 export default function SettingsView() {
+  const { profile } = useAuth();
   const [activeTab, setActiveTab] = useState<SettingsTab>("profile");
 
-  const tabs = [
-    { id: "profile", label: "Profile", icon: User },
-    { id: "institution", label: "Institution", icon: Building2 },
-    { id: "security", label: "Security", icon: Shield },
-  ] as const;
+  const tabs = useMemo(() => {
+    const baseTabs = [
+      { id: "profile", label: "Profile", icon: User },
+      { id: "security", label: "Security", icon: Shield },
+    ];
+
+    if (profile?.role === 'admin') {
+      baseTabs.splice(1, 0, { id: "institution", label: "Institution", icon: Building2 });
+    }
+
+    return baseTabs;
+  }, [profile?.role]);
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
       <div>
         <h1 className="text-4xl font-bold tracking-tight text-text font-source-serif">Settings</h1>
-        <p className="text-text-muted mt-1">Configure your personal preferences and system-wide institutional parameters.</p>
+        <p className="text-text-muted mt-1">Configure your personal preferences and account security.</p>
       </div>
 
       <div className="flex flex-col lg:flex-row gap-8">
@@ -50,7 +59,7 @@ export default function SettingsView() {
         {/* Settings Content */}
         <main className="flex-1 max-w-3xl">
           {activeTab === "profile" && <ProfileSettings />}
-          {activeTab === "institution" && <InstitutionSettings />}
+          {activeTab === "institution" && profile?.role === 'admin' && <InstitutionSettings />}
           {activeTab === "security" && <SecuritySettings />}
         </main>
       </div>

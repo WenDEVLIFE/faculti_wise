@@ -1,0 +1,11 @@
+import * as React from "react";
+import SettingsView from "@/features/settings/SettingsView";
+import { Suspense } from "react";
+
+export default function StudentSettingsPage() {
+  return (
+    <Suspense fallback={<div className="animate-pulse h-[600px] bg-surface-alt rounded-xl" />}>
+      <SettingsView />
+    </Suspense>
+  );
+}

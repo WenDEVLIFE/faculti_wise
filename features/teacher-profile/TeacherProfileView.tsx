@@ -1,11 +1,14 @@
-import React from "react";
+import React, { useState } from "react";
 import { TeacherPersonalInfo } from "./components/TeacherPersonalInfo";
 import { TeacherAcademicStats } from "./components/TeacherAcademicStats";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
-import { Bell, Shield, LogOut, ChevronRight, User } from "lucide-react";
+import { Bell, Shield, LogOut, ChevronRight, User, X } from "lucide-react";
+import { ChangePasswordForm } from "@/components/auth/ChangePasswordForm";
 
 export default function TeacherProfileView() {
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
       <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
@@ -63,7 +66,11 @@ export default function TeacherProfileView() {
                 <Button variant="secondary" className="w-full justify-start gap-3 h-11 border-border/50">
                   <Bell className="h-4 w-4" /> Notification Settings
                 </Button>
-                <Button variant="secondary" className="w-full justify-start gap-3 h-11 border-border/50">
+                <Button 
+                  variant="secondary" 
+                  onClick={() => setIsChangingPassword(true)}
+                  className="w-full justify-start gap-3 h-11 border-border/50"
+                >
                   <Shield className="h-4 w-4" /> Change Password
                 </Button>
                 <Button variant="ghost" className="w-full justify-start gap-3 h-11 text-danger hover:bg-danger/10 hover:text-danger">
@@ -89,6 +96,29 @@ export default function TeacherProfileView() {
           </Card>
         </div>
       </div>
+
+      {/* Change Password Modal Overlay */}
+      {isChangingPassword && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/40 backdrop-blur-sm animate-in fade-in duration-300">
+          <div className="w-full max-w-md bg-white rounded-3xl shadow-2xl border border-border overflow-hidden animate-in zoom-in-95 duration-300">
+            <div className="flex items-center justify-between p-6 border-b border-border/50 bg-surface-alt/30">
+              <h3 className="text-xl font-bold text-text flex items-center gap-2">
+                <Shield className="h-5 w-5 text-primary" />
+                Change Password
+              </h3>
+              <button 
+                onClick={() => setIsChangingPassword(false)}
+                className="p-2 rounded-full hover:bg-stone-200 transition-colors"
+              >
+                <X className="h-5 w-5 text-text-muted" />
+              </button>
+            </div>
+            <div className="p-6">
+              <ChangePasswordForm onCancel={() => setIsChangingPassword(false)} />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
