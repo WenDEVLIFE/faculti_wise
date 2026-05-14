@@ -2,7 +2,6 @@ import * as React from "react";
 import DepartmentScheduleView from "@/features/department-schedule/DepartmentScheduleView";
 import { Suspense } from "react";
 
-export const unstable_instant = { prefetch: "static" };
 
 export default function TeacherDepartmentSchedulePage() {
   return (

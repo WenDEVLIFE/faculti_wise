@@ -2,7 +2,6 @@ import * as React from "react";
 import CoursesView from "@/features/courses/CoursesView";
 import { Suspense } from "react";
 
-export const unstable_instant = { prefetch: "static" };
 
 export default function CoursesPage() {
   return (

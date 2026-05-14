@@ -2,7 +2,6 @@ import * as React from "react";
 import AvailabilityView from "@/features/availability/AvailabilityView";
 import { Suspense } from "react";
 
-export const unstable_instant = { prefetch: "static" };
 
 export default function AvailabilityPage() {
   return (

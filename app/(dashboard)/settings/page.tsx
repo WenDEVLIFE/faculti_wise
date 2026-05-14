@@ -2,7 +2,6 @@ import * as React from "react";
 import SettingsView from "@/features/settings/SettingsView";
 import { Suspense } from "react";
 
-export const unstable_instant = { prefetch: "static" };
 
 export default function SettingsPage() {
   return (

@@ -2,7 +2,6 @@ import * as React from "react";
 import RoomsView from "@/features/rooms/RoomsView";
 import { Suspense } from "react";
 
-export const unstable_instant = { prefetch: "static" };
 
 export default function RoomsPage() {
   return (

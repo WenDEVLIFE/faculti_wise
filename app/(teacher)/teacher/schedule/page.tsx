@@ -2,7 +2,6 @@ import * as React from "react";
 import TimetableView from "@/features/timetables/TimetableView";
 import { Suspense } from "react";
 
-export const unstable_instant = { prefetch: "static" };
 
 export default function MySchedulePage() {
   return (
