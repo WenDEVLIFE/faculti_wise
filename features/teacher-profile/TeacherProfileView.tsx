@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useState } from "react";
 import { TeacherPersonalInfo } from "./components/TeacherPersonalInfo";
 import { TeacherAcademicStats } from "./components/TeacherAcademicStats";
