@@ -1,10 +1,13 @@
 "use client";
 
 import * as React from "react";
-import { Bell, Search, User } from "lucide-react";
+import { Bell, Search, User, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/Button";
+import { useAuth } from "@/lib/context/AuthContext";
 
 export function StudentHeader() {
+  const { signOut } = useAuth();
+
   return (
     <header className="flex h-16 items-center justify-between border-b border-border bg-surface px-8 sticky top-0 z-30">
       <div className="flex flex-1 items-center">
@@ -27,6 +30,16 @@ export function StudentHeader() {
             <User className="h-4 w-4 text-primary" />
           </Button>
         </div>
+        <div className="h-8 w-[1px] bg-border mx-2"></div>
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          onClick={signOut}
+          className="text-text-muted hover:text-danger hover:bg-danger/5 gap-2 font-semibold"
+        >
+          <LogOut className="h-4 w-4" />
+          Logout
+        </Button>
       </div>
     </header>
   );

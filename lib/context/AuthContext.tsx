@@ -1,16 +1,18 @@
 "use client";
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { 
-  onAuthStateChanged, 
+import {
+  onAuthStateChanged,
   User as FirebaseUser,
   signInWithEmailAndPassword,
   signOut as firebaseSignOut
 } from 'firebase/auth';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
-import { auth, db } from '@/lib/firebase';
+import { getAuthInstance, getDb } from '@/lib/firebase';
 
 import { User as UserProfile } from '@/lib/types/firestore.types';
+
+import { useRouter } from 'next/navigation';
 
 interface AuthContextType {
   user: FirebaseUser | null;
@@ -23,15 +25,19 @@ const AuthContext = createContext<AuthContextType>({
   user: null,
   profile: null,
   loading: true,
-  signOut: async () => {},
+  signOut: async () => { },
 });
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<FirebaseUser | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const router = useRouter();
 
   useEffect(() => {
+    const auth = getAuthInstance();
+    const db = getDb();
+
     if (!auth) {
       setLoading(false);
       return;
@@ -39,12 +45,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setUser(user);
-      
+
       if (user && db) {
         // Fetch or create profile in Firestore
         const userDocRef = doc(db, 'users', user.uid);
         const userDoc = await getDoc(userDocRef);
-        
+
         if (userDoc.exists()) {
           setProfile(userDoc.data() as any);
         } else {
@@ -70,7 +76,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       } else {
         setProfile(null);
       }
-      
+
       setLoading(false);
     });
 
@@ -78,9 +84,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, []);
 
   const signOut = async () => {
+    const auth = getAuthInstance();
     if (!auth) return;
     try {
       await firebaseSignOut(auth);
+      router.push('/login');
     } catch (error) {
       console.error("Error signing out:", error);
     }

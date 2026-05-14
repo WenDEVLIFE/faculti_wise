@@ -16,8 +16,28 @@ const isConfigValid = !!firebaseConfig.apiKey && firebaseConfig.apiKey !== "unde
 
 // Initialize Firebase only if config is valid to prevent runtime crashes
 const app = isConfigValid ? initializeApp(firebaseConfig) : null;
-export const db = app ? getFirestore(app) : null;
-export const auth = app ? getAuth(app) : null as any;
+
+// Lazy initialization of services to avoid prerendering errors
+let _db: any = null;
+let _auth: any = null;
+
+export const getDb = () => {
+  if (!_db && app) {
+    _db = getFirestore(app);
+  }
+  return _db;
+};
+
+export const getAuthInstance = () => {
+  if (!_auth && app) {
+    _auth = getAuth(app);
+  }
+  return _auth;
+};
+
+// For backward compatibility while we refactor, but it's better to use the getters
+export const db = typeof window !== "undefined" ? (app ? getFirestore(app) : null) : null;
+export const auth = typeof window !== "undefined" ? (app ? getAuth(app) : null as any) : null as any;
 
 if (!isConfigValid) {
   console.warn("Firebase API key is missing. Authentication and Firestore will be disabled.");
