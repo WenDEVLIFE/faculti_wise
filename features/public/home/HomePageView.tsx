@@ -1,8 +1,24 @@
-import Link from "next/link";
+"use client";
 
+import Link from "next/link";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/lib/context/AuthContext";
 import { appRoutes } from "@/lib/constants/routes.constants";
 
 export default function HomePageView() {
+  const { profile } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (profile) {
+      const redirectPath = 
+        profile.role === 'admin' ? appRoutes.dashboard :
+        profile.role === 'teacher' ? appRoutes.teacherDashboard :
+        appRoutes.studentDashboard;
+      router.push(redirectPath);
+    }
+  }, [profile, router]);
   return (
     <main className="min-h-screen overflow-hidden bg-[radial-gradient(circle_at_top_left,_rgba(245,158,11,0.14),_transparent_35%),radial-gradient(circle_at_top_right,_rgba(15,118,110,0.12),_transparent_30%),linear-gradient(180deg,_#fffdf8_0%,_#f6f1e7_100%)] text-stone-900">
       <div className="mx-auto flex min-h-screen w-full max-w-7xl flex-col px-6 py-6 sm:px-8 lg:px-10">

@@ -4,16 +4,30 @@ import Link from "next/link";
 
 import { appRoutes } from "@/lib/constants/routes.constants";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/lib/context/AuthContext";
 import { signInWithEmailAndPassword } from "firebase/auth";
-import { auth } from "@/lib/firebase";
+import { auth, getAuthInstance } from "@/lib/firebase";
+import { User as UserProfile } from "@/lib/types/firestore.types";
+
 export default function LoginPageView() {
   const router = useRouter();
+  const { profile } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (profile) {
+      const redirectPath =
+        profile.role === 'admin' ? appRoutes.dashboard :
+          profile.role === 'teacher' ? appRoutes.teacherDashboard :
+            appRoutes.studentDashboard;
+      router.push(redirectPath);
+    }
+  }, [profile, router]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -21,10 +35,9 @@ export default function LoginPageView() {
     setLoading(true);
     try {
       await signInWithEmailAndPassword(auth, email, password);
-      router.push(appRoutes.dashboard);
+      // Redirection is handled by the useEffect watching the profile
     } catch (err: any) {
       setError(err.message || "Failed to sign in. Please check your credentials.");
-    } finally {
       setLoading(false);
     }
   };
