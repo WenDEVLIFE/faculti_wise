@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/Button";
 import { useAuth } from "@/lib/context/AuthContext";
 
 export function StudentHeader() {
-  const { signOut } = useAuth();
+  const { profile, signOut } = useAuth();
 
   return (
     <header className="flex h-16 items-center justify-between border-b border-border bg-surface px-8 sticky top-0 z-30">
@@ -23,11 +23,17 @@ export function StudentHeader() {
         <div className="h-8 w-[1px] bg-border mx-2"></div>
         <div className="flex items-center gap-3">
           <div className="flex flex-col items-end leading-tight">
-            <span className="text-sm font-semibold text-text">Faculty Schedule Viewer</span>
-            <span className="text-[10px] text-text-muted">Public Access Mode</span>
+            <span className="text-sm font-bold text-text">{profile?.displayName || "University Student"}</span>
+            <span className="text-[10px] text-text-muted">
+              {profile?.role === 'student' ? "Student Access" : "Public Access Mode"}
+            </span>
           </div>
-          <Button variant="ghost" size="icon" className="rounded-full h-8 w-8 bg-surface-alt">
-            <User className="h-4 w-4 text-primary" />
+          <Button variant="ghost" size="icon" className="rounded-full h-8 w-8 bg-primary/10 overflow-hidden">
+            {profile?.photoURL ? (
+              <img src={profile.photoURL} alt="" className="h-full w-full object-cover" />
+            ) : (
+              <User className="h-4 w-4 text-primary" />
+            )}
           </Button>
         </div>
         <div className="h-8 w-[1px] bg-border mx-2"></div>

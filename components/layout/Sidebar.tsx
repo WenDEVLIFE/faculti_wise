@@ -13,8 +13,9 @@ import {
   Settings,
   Menu,
   GraduationCap,
-  History
+  History as HistoryIcon
 } from "lucide-react";
+import { useAuth } from "@/lib/context/AuthContext";
 
 const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
@@ -23,12 +24,18 @@ const navigation = [
   { name: "Courses", href: "/courses", icon: BookOpen },
   { name: "Rooms & Labs", href: "/rooms", icon: Building2 },
   { name: "Users", href: "/users", icon: Users },
-  { name: "Audit Logs", href: "/audit", icon: History },
+  { name: "Audit Logs", href: "/audit", icon: HistoryIcon },
   { name: "Settings", href: "/settings", icon: Settings },
 ];
 
 export function Sidebar() {
+  const { profile } = useAuth();
   const pathname = usePathname();
+
+  // Get initials for the avatar placeholder
+  const initials = profile?.displayName
+    ? profile.displayName.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2)
+    : "FW";
 
   return (
     <div className="flex h-full w-64 flex-col border-r border-border bg-surface">
@@ -73,12 +80,18 @@ export function Sidebar() {
       <div className="border-t border-border p-4">
         <div className="rounded-md bg-surface-alt p-3">
           <div className="flex items-center gap-3">
-            <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xs">
-              AD
+            <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-[10px] overflow-hidden">
+              {profile?.photoURL ? (
+                <img src={profile.photoURL} alt="" className="h-full w-full object-cover" />
+              ) : initials}
             </div>
             <div className="flex flex-col">
-              <span className="text-xs font-semibold text-text">Administrator</span>
-              <span className="text-[10px] text-text-muted">Academic Affairs</span>
+              <span className="text-[11px] font-bold text-text truncate max-w-[120px]">
+                {profile?.displayName || "System User"}
+              </span>
+              <span className="text-[9px] text-text-muted uppercase tracking-wider font-semibold">
+                {profile?.role || "Staff"} {profile?.departmentId ? `• ${profile.departmentId}` : ""}
+              </span>
             </div>
           </div>
         </div>

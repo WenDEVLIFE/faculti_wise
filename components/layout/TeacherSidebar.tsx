@@ -14,6 +14,7 @@ import {
   ClipboardList
 } from "lucide-react";
 import { appRoutes } from "@/lib/constants/routes.constants";
+import { useAuth } from "@/lib/context/AuthContext";
 
 const navigation = [
   { name: "My Dashboard", href: appRoutes.teacherDashboard, icon: LayoutDashboard },
@@ -24,7 +25,13 @@ const navigation = [
 ];
 
 export function TeacherSidebar() {
+  const { profile } = useAuth();
   const pathname = usePathname();
+
+  // Get initials for the avatar placeholder
+  const initials = profile?.displayName
+    ? profile.displayName.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2)
+    : "FW";
 
   return (
     <div className="flex h-full w-64 flex-col border-r border-border bg-surface">
@@ -69,12 +76,18 @@ export function TeacherSidebar() {
       <div className="border-t border-border p-4">
         <div className="rounded-md bg-surface-alt p-3">
           <div className="flex items-center gap-3">
-            <div className="h-8 w-8 rounded-full bg-teal-100 flex items-center justify-center text-teal-700 font-bold text-xs">
-              JD
+            <div className="h-8 w-8 rounded-full bg-teal-100 flex items-center justify-center text-teal-700 font-bold text-[10px] overflow-hidden">
+              {profile?.photoURL ? (
+                <img src={profile.photoURL} alt="" className="h-full w-full object-cover" />
+              ) : initials}
             </div>
             <div className="flex flex-col">
-              <span className="text-xs font-semibold text-text">Prof. Jane Doe</span>
-              <span className="text-[10px] text-text-muted">Faculty Member</span>
+              <span className="text-[11px] font-bold text-text truncate max-w-[120px]">
+                {profile?.displayName || "Professor"}
+              </span>
+              <span className="text-[9px] text-text-muted uppercase tracking-wider font-semibold">
+                {profile?.role || "Faculty Member"}
+              </span>
             </div>
           </div>
         </div>

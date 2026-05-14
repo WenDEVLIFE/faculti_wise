@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/Button";
 import { useAuth } from "@/lib/context/AuthContext";
 
 export function Header() {
-  const { signOut } = useAuth();
+  const { profile, signOut } = useAuth();
 
   return (
     <header className="flex h-16 items-center justify-between border-b border-border bg-surface px-8 sticky top-0 z-30">
@@ -29,12 +29,19 @@ export function Header() {
         </Button>
         <div className="h-8 w-[1px] bg-border mx-2"></div>
         <div className="flex items-center gap-3">
-          <div className="flex flex-col items-start leading-tight hidden lg:flex mr-1">
-            <span className="text-sm font-semibold text-text">Dr. Elena Cruz</span>
-            <span className="text-[10px] text-text-muted">Dean of Computer Science</span>
+          <div className="flex flex-col items-end leading-tight hidden lg:flex mr-1">
+            <span className="text-sm font-bold text-text">{profile?.displayName || "Loading..."}</span>
+            <span className="text-[10px] text-text-muted text-right">
+              {profile?.role ? profile.role.charAt(0).toUpperCase() + profile.role.slice(1) : "University Member"}
+              {profile?.departmentId ? ` • ${profile.departmentId}` : ""}
+            </span>
           </div>
-          <Button variant="ghost" size="icon" className="rounded-full h-8 w-8 bg-surface-alt">
-            <User className="h-4 w-4 text-primary" />
+          <Button variant="ghost" size="icon" className="rounded-full h-8 w-8 bg-primary/10 overflow-hidden">
+            {profile?.photoURL ? (
+              <img src={profile.photoURL} alt="" className="h-full w-full object-cover" />
+            ) : (
+              <User className="h-4 w-4 text-primary" />
+            )}
           </Button>
         </div>
         <div className="h-8 w-[1px] bg-border mx-2"></div>
