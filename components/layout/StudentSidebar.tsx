@@ -14,10 +14,7 @@ import {
 import { appRoutes } from "@/lib/constants/routes.constants";
 
 const navigation = [
-  { name: "My Dashboard", href: appRoutes.studentDashboard, icon: LayoutDashboard },
-  { name: "My Schedule", href: appRoutes.studentSchedule, icon: Calendar },
-  { name: "Department Schedule", href: appRoutes.studentDepartmentSchedule, icon: Building2 },
-  { name: "Profile", href: appRoutes.studentSettings, icon: User },
+  { name: "Faculty Schedule", href: appRoutes.studentDashboard, icon: Calendar },
 ];
 
 export function StudentSidebar() {
@@ -63,19 +60,7 @@ export function StudentSidebar() {
           })}
         </nav>
       </div>
-      <div className="border-t border-border p-4">
-        <div className="rounded-md bg-surface-alt p-3">
-          <div className="flex items-center gap-3">
-            <div className="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold text-xs">
-              JS
-            </div>
-            <div className="flex flex-col">
-              <span className="text-xs font-semibold text-text">John Smith</span>
-              <span className="text-[10px] text-text-muted">CS Student • Year 3</span>
-            </div>
-          </div>
-        </div>
-      </div>
     </div>
   );
 }
+

@@ -12,8 +12,15 @@ const firebaseConfig = {
   measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
 };
 
-const app = initializeApp(firebaseConfig);
-export const db = getFirestore(app);
-export const auth = getAuth(app);
+const isConfigValid = !!firebaseConfig.apiKey && firebaseConfig.apiKey !== "undefined";
+
+// Initialize Firebase only if config is valid to prevent runtime crashes
+const app = isConfigValid ? initializeApp(firebaseConfig) : null;
+export const db = app ? getFirestore(app) : null;
+export const auth = app ? getAuth(app) : null as any;
+
+if (!isConfigValid) {
+  console.warn("Firebase API key is missing. Authentication and Firestore will be disabled.");
+}
 
 export default app;
