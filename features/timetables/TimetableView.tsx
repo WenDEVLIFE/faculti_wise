@@ -11,7 +11,7 @@ import {
   collection,
   query,
   where,
-  getDocs,
+  onSnapshot,
   doc,
   getDoc
 } from "firebase/firestore";
@@ -29,51 +29,46 @@ export default function TimetableView({ title, subtitle }: TimetableViewProps) {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    async function fetchData() {
-      if (!profile) return;
+    if (!profile || authLoading) return;
 
-      const db = getDb();
-      if (!db) {
-        setError("Firebase database not initialized");
-        setLoading(false);
-        return;
-      }
+    const db = getDb();
+    if (!db) {
+      setError("Firebase database not initialized");
+      setLoading(false);
+      return;
+    }
 
+    setLoading(true);
+    setError(null);
+
+    // 1. Define the query for schedules
+    let scheduleQuery;
+    if (profile.role === 'teacher') {
+      scheduleQuery = query(
+        collection(db, "schedules"),
+        where("teacherId", "==", profile.id)
+      );
+    } else if (profile.role === 'student') {
+      // In a real app, this would be filtered by section or enrollments
+      scheduleQuery = collection(db, "schedules");
+    } else {
+      scheduleQuery = collection(db, "schedules");
+    }
+
+    // 2. Listen to changes in real-time
+    const unsubscribe = onSnapshot(scheduleQuery, async (snapshot) => {
       try {
-        setLoading(true);
-        setError(null);
-
-        // 1. Fetch schedules for this user
-        // If teacher, fetch by teacherId. If student, we'd need enrollments (for now let's assume teacher)
-        let scheduleQuery;
-        if (profile.role === 'teacher') {
-          scheduleQuery = query(
-            collection(db, "schedules"),
-            where("teacherId", "==", profile.id)
-          );
-        } else if (profile.role === 'student') {
-          // For MVP, if they are student, maybe they see all schedules for their section?
-          // Since we don't have enrollments yet, let's just fetch all or specific if possible.
-          scheduleQuery = collection(db, "schedules"); // Temporary: fetch all for students
-        } else {
-          scheduleQuery = collection(db, "schedules");
-        }
-
-        const scheduleSnap = await getDocs(scheduleQuery);
-        const scheduleData = scheduleSnap.docs.map(doc => ({
+        const scheduleData = snapshot.docs.map(doc => ({
           id: doc.id,
           ...doc.data()
         })) as Schedule[];
 
-        // 2. Fetch related data (Courses, Rooms) to enrich the display
-        // We do this in parallel or as needed. For simplicity, let's map them.
+        // 3. Enrich the data (Courses, Rooms)
         const enrichedEntries: TimetableEntry[] = await Promise.all(
           scheduleData.map(async (s) => {
-            // Fetch Course
             const courseDoc = await getDoc(doc(db, "courses", s.courseId));
             const course = courseDoc.exists() ? (courseDoc.data() as Course) : null;
 
-            // Fetch Room
             const roomDoc = await getDoc(doc(db, "rooms", s.roomId));
             const room = roomDoc.exists() ? (roomDoc.data() as Room) : null;
 
@@ -81,7 +76,7 @@ export default function TimetableView({ title, subtitle }: TimetableViewProps) {
               id: s.id,
               courseCode: s.courseId,
               courseName: course?.name || s.courseId,
-              teacherName: profile.displayName, // Current user is the teacher
+              teacherName: profile.displayName,
               room: room ? `${room.name} (${room.building})` : s.roomId,
               day: s.dayOfWeek as DayOfWeek,
               startTime: s.startTime,
@@ -92,19 +87,19 @@ export default function TimetableView({ title, subtitle }: TimetableViewProps) {
         );
 
         setEntries(enrichedEntries);
+        setLoading(false);
       } catch (err: any) {
-        console.error("Error fetching timetable:", err);
-        setError("Failed to load timetable data. Please try again later.");
-      } finally {
+        console.error("Error enriching timetable data:", err);
+        setError("Failed to process schedule updates.");
         setLoading(false);
       }
-    }
-
-    if (!authLoading && profile) {
-      fetchData();
-    } else if (!authLoading && !profile) {
+    }, (err) => {
+      console.error("Schedule subscription error:", err);
+      setError("Failed to connect to real-time schedule updates.");
       setLoading(false);
-    }
+    });
+
+    return () => unsubscribe();
   }, [profile, authLoading]);
 
   if (authLoading || loading) {

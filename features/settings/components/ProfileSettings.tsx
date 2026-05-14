@@ -5,7 +5,13 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { User, Mail, Camera } from "lucide-react";
 
+import { useAuth } from "@/lib/context/AuthContext";
+
 export function ProfileSettings() {
+  const { profile } = useAuth();
+
+  if (!profile) return null;
+
   return (
     <div className="space-y-6">
       <Card className="border-border/50 shadow-sm overflow-hidden bg-white/80 backdrop-blur-sm">
@@ -19,15 +25,21 @@ export function ProfileSettings() {
           <div className="flex items-center gap-6">
             <div className="relative group">
               <div className="h-24 w-24 rounded-2xl bg-primary/10 border-2 border-dashed border-primary/30 flex items-center justify-center overflow-hidden">
-                <User className="h-10 w-10 text-primary/40" />
+                {profile.photoURL ? (
+                  <img src={profile.photoURL} alt={profile.displayName} className="h-full w-full object-cover" />
+                ) : (
+                  <User className="h-10 w-10 text-primary/40" />
+                )}
               </div>
               <button className="absolute -bottom-2 -right-2 h-8 w-8 rounded-lg bg-primary text-white flex items-center justify-center shadow-lg hover:bg-primary-strong transition-all">
                 <Camera className="h-4 w-4" />
               </button>
             </div>
             <div className="space-y-1">
-              <h3 className="font-bold text-text">Administrator</h3>
-              <p className="text-xs text-text-muted">Global System Administrator • Since 2024</p>
+              <h3 className="font-bold text-text">{profile.displayName}</h3>
+              <p className="text-xs text-text-muted">
+                {profile.role.charAt(0).toUpperCase() + profile.role.slice(1)} • Since {profile.createdAt ? new Date(profile.createdAt.seconds * 1000).getFullYear() : "2024"}
+              </p>
             </div>
           </div>
 
@@ -38,7 +50,7 @@ export function ProfileSettings() {
                 <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-text-muted" />
                 <input 
                   type="text" 
-                  defaultValue="Admin User"
+                  defaultValue={profile.displayName}
                   className="w-full pl-10 pr-4 py-2.5 bg-white border border-border rounded-xl text-sm focus:outline-none focus:ring-4 focus:ring-primary/10 transition-all"
                 />
               </div>
@@ -49,8 +61,9 @@ export function ProfileSettings() {
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-text-muted" />
                 <input 
                   type="email" 
-                  defaultValue="admin@facultywise.edu"
-                  className="w-full pl-10 pr-4 py-2.5 bg-white border border-border rounded-xl text-sm focus:outline-none focus:ring-4 focus:ring-primary/10 transition-all"
+                  defaultValue={profile.email}
+                  disabled
+                  className="w-full pl-10 pr-4 py-2.5 bg-surface-alt border border-border rounded-xl text-sm opacity-70 cursor-not-allowed"
                 />
               </div>
             </div>
