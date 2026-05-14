@@ -44,45 +44,9 @@ export default function LoginPageView() {
 
   return (
     <main className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(45,212,191,0.12),_transparent_30%),radial-gradient(circle_at_bottom_right,_rgba(245,158,11,0.16),_transparent_34%),linear-gradient(180deg,_#fffaf1_0%,_#f3efe6_100%)] px-6 py-8 text-stone-900 sm:px-8 lg:px-10">
-      <div className="mx-auto grid min-h-[calc(100vh-4rem)] w-full max-w-7xl gap-8 lg:grid-cols-[1fr_0.95fr]">
-        <section className="relative overflow-hidden rounded-[2rem] border border-white/70 bg-stone-950 p-8 text-white shadow-[0_30px_90px_rgba(43,30,12,0.24)] sm:p-10 lg:p-12">
-          <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.1),transparent_40%)]" />
-          <div className="relative flex h-full flex-col justify-between gap-10">
-            <div className="max-w-xl space-y-6">
-              <p className="text-xs font-semibold uppercase tracking-[0.35em] text-amber-300">
-                Faculty Wise
-              </p>
-              <div className="space-y-4">
-                <h1 className="text-4xl font-semibold tracking-tight sm:text-5xl">
-                  Sign in to keep faculty schedules under control.
-                </h1>
-                <p className="max-w-lg text-base leading-7 text-stone-300 sm:text-lg">
-                  Manage assignments, spot overloads, and move faster from
-                  planning to publication with one workspace for academic
-                  operations.
-                </p>
-              </div>
-            </div>
-
-            <div className="grid gap-4 sm:grid-cols-3">
-              <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                <p className="text-sm text-stone-300">Departments</p>
-                <p className="mt-2 text-2xl font-semibold">12</p>
-              </div>
-              <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                <p className="text-sm text-stone-300">Alerts</p>
-                <p className="mt-2 text-2xl font-semibold">Real-time</p>
-              </div>
-              <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                <p className="text-sm text-stone-300">Planning</p>
-                <p className="mt-2 text-2xl font-semibold">Aligned</p>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section className="flex items-center justify-center">
-          <div className="w-full max-w-lg rounded-[2rem] border border-white/70 bg-white/85 p-6 shadow-[0_25px_70px_rgba(100,75,35,0.14)] backdrop-blur-xl sm:p-8 lg:p-10">
+      <div className="mx-auto flex min-h-[calc(100vh-4rem)] w-full items-center justify-center">
+        <section className="w-full max-w-lg">
+          <div className="rounded-[2rem] border border-white/70 bg-white/85 p-6 shadow-[0_25px_70px_rgba(100,75,35,0.14)] backdrop-blur-xl sm:p-8 lg:p-10">
             <div className="space-y-2">
               <p className="text-sm font-semibold uppercase tracking-[0.3em] text-amber-700">
                 Welcome back
@@ -166,6 +130,7 @@ export default function LoginPageView() {
                 {loading ? "Signing in..." : "Sign in"}
               </button>
 
+              {/*
               <Link
                 href={appRoutes.dashboard}
                 className="inline-flex h-12 w-full items-center justify-center gap-3 rounded-2xl border border-amber-200 bg-amber-50/50 px-5 text-sm font-semibold text-amber-900 transition hover:border-amber-300 hover:bg-amber-50"
@@ -202,6 +167,7 @@ export default function LoginPageView() {
                   Create an account
                 </Link>
               </p>
+              */}
             </form>
           </div>
         </section>
