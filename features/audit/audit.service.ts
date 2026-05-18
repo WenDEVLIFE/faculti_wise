@@ -47,8 +47,6 @@ export const auditService = {
       });
     } catch (error) {
       console.error("Failed to log audit action:", error);
-      // We don't necessarily want to crash the app if logging fails, 
-      // but in some systems, this would be a hard requirement.
     }
   },
 
@@ -92,3 +90,4 @@ export const auditService = {
     });
   }
 };
+

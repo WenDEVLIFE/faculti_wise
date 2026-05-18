@@ -46,6 +46,7 @@ export const userManagementService = {
     if (!db) {
       throw new Error("Firestore not initialized");
     }
+
     const usersRef = collection(db, "users");
     const q = query(usersRef, orderBy("createdAt", "desc"));
     const querySnapshot = await getDocs(q);
@@ -66,6 +67,7 @@ export const userManagementService = {
     if (!db) {
       throw new Error("Firestore not initialized");
     }
+
     const usersRef = collection(db, "users");
     const q = query(usersRef, orderBy("createdAt", "desc"));
     
@@ -103,7 +105,6 @@ export const userManagementService = {
     
     try {
       // 2. Create account in Firebase Auth
-      // This will automatically throw 'auth/email-already-in-use' if email exists
       const userCredential = await createUserWithEmailAndPassword(
         secondaryAuth, 
         data.email, 
@@ -161,11 +162,11 @@ export const userManagementService = {
   async deleteUser(userId: string, performingUser?: User): Promise<void> {
     // Note: This only deletes from Firestore. 
     // Deleting from Auth requires Admin SDK or the user being logged in.
-    // For now, we'll mark as inactive or delete from Firestore.
     const db = getDb();
     if (!db) {
       throw new Error("Firestore not initialized");
     }
+
     await deleteDoc(doc(db, "users", userId));
 
     if (performingUser) {
@@ -184,6 +185,7 @@ export const userManagementService = {
     if (!db) {
       throw new Error("Firestore not initialized");
     }
+
     await updateDoc(doc(db, "users", userId), {
       status,
       updatedAt: serverTimestamp(),
@@ -205,6 +207,7 @@ export const userManagementService = {
     if (!db) {
       throw new Error("Firestore not initialized");
     }
+
     await updateDoc(doc(db, "users", userId), {
       role,
       updatedAt: serverTimestamp(),
@@ -221,3 +224,4 @@ export const userManagementService = {
     }
   }
 };
+

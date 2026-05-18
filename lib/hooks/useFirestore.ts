@@ -106,3 +106,4 @@ export function useCourses(realtime: boolean = false) {
 export function useRooms(realtime: boolean = false) {
   return useFirestoreCollection<Room>('rooms', undefined, realtime);
 }
+
