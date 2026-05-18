@@ -3,10 +3,11 @@
 import React, { useState, useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
-import { Building2, Calendar, Globe, Bell, Plus, AlertTriangle, Layers } from "lucide-react";
+import { Building2, Calendar, Globe, Bell, Plus, AlertTriangle, Layers, Upload, CheckCircle2 } from "lucide-react";
 import { Department } from "@/lib/types/department.types";
 import { Section, Term } from "@/lib/types/section-term.types";
 import { User } from "@/lib/types/firestore.types";
+import { ImportSummary } from "@/lib/types/data-import.types";
 import { departmentsService } from "@/features/departments/departments.service";
 import { sectionsService, termsService } from "@/features/sections/sections.service";
 import { AddEditDepartmentModal } from "@/features/departments/components/AddEditDepartmentModal";
@@ -15,6 +16,7 @@ import { AddEditSectionModal } from "@/features/sections/components/AddEditSecti
 import { SectionCard } from "@/features/sections/components/SectionCard";
 import { AddEditTermModal } from "@/features/sections/components/AddEditTermModal";
 import { TermCard } from "@/features/sections/components/TermCard";
+import { DataImportModal } from "@/features/data-import/components/DataImportModal";
 import { useAuth } from "@/lib/context/AuthContext";
 
 export function InstitutionSettings() {
@@ -37,6 +39,10 @@ export function InstitutionSettings() {
   // Term modal state
   const [isTermModalOpen, setIsTermModalOpen] = useState(false);
   const [termToEdit, setTermToEdit] = useState<Term | undefined>();
+
+  // Import modal state
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [importSuccessMessage, setImportSuccessMessage] = useState<string | null>(null);
 
   // UI state
   const [loading, setLoading] = useState(true);
@@ -179,6 +185,14 @@ export function InstitutionSettings() {
   const handleTermModalClose = () => {
     setIsTermModalOpen(false);
     setTermToEdit(undefined);
+  };
+
+  const handleImportSuccess = (summary: ImportSummary) => {
+    setImportSuccessMessage(
+      `Successfully imported ${summary.successCount} records. ${summary.failureCount > 0 ? `${summary.failureCount} records failed.` : ""}`
+    );
+    setIsImportModalOpen(false);
+    setTimeout(() => setImportSuccessMessage(null), 5000);
   };
 
   const filteredSections = selectedProgramId
@@ -527,6 +541,74 @@ export function InstitutionSettings() {
         </CardContent>
       </Card>
 
+      {/* Data Import Management Card */}
+      <Card className="border-border/50 shadow-sm overflow-hidden bg-white/80 backdrop-blur-sm">
+        <CardHeader className="bg-surface-alt/30 border-b border-border/50 flex items-center justify-between">
+          <CardTitle className="text-lg flex items-center gap-2">
+            <Upload className="h-5 w-5 text-primary" />
+            Bulk Data Import
+          </CardTitle>
+        </CardHeader>
+
+        <CardContent className="pt-6">
+          <div className="space-y-4">
+            <p className="text-sm text-text-muted">
+              Import faculty members, courses, and room data from CSV or JSON files. Download templates below to get started.
+            </p>
+
+            {importSuccessMessage && (
+              <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-sm flex items-center gap-2">
+                <CheckCircle2 className="h-4 w-4 shrink-0" />
+                <span>{importSuccessMessage}</span>
+              </div>
+            )}
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <Button
+                onClick={() => setIsImportModalOpen(true)}
+                variant="primary"
+                className="gap-2 h-12"
+              >
+                <Upload className="h-5 w-5" />
+                Import Data
+              </Button>
+              <Button
+                onClick={() => setIsImportModalOpen(true)}
+                variant="secondary"
+                className="gap-2 h-12"
+              >
+                Download CSV Template
+              </Button>
+              <Button
+                onClick={() => setIsImportModalOpen(true)}
+                variant="secondary"
+                className="gap-2 h-12"
+              >
+                Download JSON Template
+              </Button>
+            </div>
+
+            <div className="p-4 rounded-xl bg-surface-alt/50 border border-border/50 space-y-3">
+              <h4 className="font-medium text-sm text-text">Supported Entity Types</h4>
+              <ul className="text-sm text-text-muted space-y-2">
+                <li className="flex items-center gap-2">
+                  <span className="h-1.5 w-1.5 rounded-full bg-primary" />
+                  Faculty & Staff (users with role teacher)
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="h-1.5 w-1.5 rounded-full bg-primary" />
+                  Courses (with code, units, hours, category)
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="h-1.5 w-1.5 rounded-full bg-primary" />
+                  Rooms (with building, capacity, type, features)
+                </li>
+              </ul>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Modals */}
       <AddEditDepartmentModal
         isOpen={isDeptModalOpen}
@@ -545,6 +627,12 @@ export function InstitutionSettings() {
         isOpen={isTermModalOpen}
         onClose={handleTermModalClose}
         termToEdit={termToEdit}
+      />
+
+      <DataImportModal
+        isOpen={isImportModalOpen}
+        onClose={() => setIsImportModalOpen(false)}
+        onSuccess={handleImportSuccess}
       />
     </div>
   );

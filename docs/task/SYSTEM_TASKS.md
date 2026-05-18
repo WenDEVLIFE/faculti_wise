@@ -12,7 +12,7 @@ This document tracks the core system and infrastructure tasks for Faculty_Wise.
 - [x] **Department & Program Management**: CRUD interfaces for departments, programs, and academic terms.
 - [x] **Course & Room Directory**: Management UI for courses (units, hours, category) and rooms (capacity, type, features).
 - [x] **Section Management**: Tools to define class sections (BSCS-3A, etc.) and track student counts.
-- [ ] **CSV/JSON Data Import**: Build a robust import pipeline for bulk uploading faculty, course, and room data.
+- [x] **CSV/JSON Data Import**: Build a robust import pipeline for bulk uploading faculty, course, and room data.
 
 ## 3. Academic Operations
 - [x] **Faculty Profiles**: Detailed profiles including specialization, target units, and employment type.
