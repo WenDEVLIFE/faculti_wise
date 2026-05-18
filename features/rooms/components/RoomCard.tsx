@@ -4,11 +4,14 @@ import React from "react";
 import { Room, RoomStatus } from "@/lib/types/room.types";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
-import { MapPin, Users, Cpu, Monitor } from "lucide-react";
+import { MapPin, Users, Cpu, Monitor, Pencil, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface RoomCardProps {
   room: Room;
+  isAdmin?: boolean;
+  onEdit?: (room: Room) => void;
+  onDelete?: (roomId: string) => void;
 }
 
 const statusConfig: Record<RoomStatus, { label: string; className: string }> = {
@@ -17,9 +20,9 @@ const statusConfig: Record<RoomStatus, { label: string; className: string }> = {
   maintenance: { label: "Maintenance", className: "bg-amber-100 text-amber-700 border-amber-200" },
 };
 
-export function RoomCard({ room }: RoomCardProps) {
+export function RoomCard({ room, isAdmin, onEdit, onDelete }: RoomCardProps) {
   return (
-    <Card className="group overflow-hidden hover:shadow-lg transition-all duration-300 border-border/50 bg-white/80 backdrop-blur-sm">
+    <Card className="group overflow-hidden hover:shadow-lg transition-all duration-300 border-border/50 bg-white/80 backdrop-blur-sm relative">
       <div className={cn(
         "h-1.5 w-full",
         room.status === "available" ? "bg-emerald-500" : 
@@ -31,9 +34,29 @@ export function RoomCard({ room }: RoomCardProps) {
           <CardTitle className="text-xl font-bold text-text">
             {room.name}
           </CardTitle>
-          <Badge variant="outline" className={statusConfig[room.status].className}>
-            {statusConfig[room.status].label}
-          </Badge>
+          <div className="flex items-center gap-1.5">
+            <Badge variant="outline" className={statusConfig[room.status].className}>
+              {statusConfig[room.status].label}
+            </Badge>
+            {isAdmin && (
+              <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                <button
+                  onClick={() => onEdit?.(room)}
+                  className="p-1.5 rounded-lg bg-white border border-border hover:border-primary hover:text-primary transition-all text-text-muted"
+                  title="Edit Room"
+                >
+                  <Pencil className="h-3.5 w-3.5" />
+                </button>
+                <button
+                  onClick={() => onDelete?.(room.id)}
+                  className="p-1.5 rounded-lg bg-white border border-border hover:border-danger hover:text-danger transition-all text-text-muted"
+                  title="Delete Room"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            )}
+          </div>
         </div>
         <div className="flex items-center gap-1.5 text-text-muted text-xs font-medium">
           <MapPin className="h-3 w-3" />
@@ -62,7 +85,7 @@ export function RoomCard({ room }: RoomCardProps) {
         <div className="space-y-2">
           <p className="text-[10px] text-text-muted uppercase font-bold tracking-wider">Features</p>
           <div className="flex flex-wrap gap-1.5">
-            {room.features.map((feature) => (
+            {room.features && room.features.map((feature) => (
               <span key={feature} className="text-[10px] px-2 py-0.5 rounded-full bg-surface-alt text-text-muted border border-border">
                 {feature}
               </span>
