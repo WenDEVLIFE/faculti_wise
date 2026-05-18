@@ -20,6 +20,7 @@ import {
 } from "firebase/firestore";
 import { initializeApp, getApp, getApps } from "firebase/app";
 import { db } from "@/lib/firebase";
+import { mockData } from "@/lib/constants/mockData";
 import { User } from "@/lib/types/firestore.types";
 import { auditService } from "../audit/audit.service";
 
@@ -42,6 +43,14 @@ const getSecondaryAuth = () => {
 
 export const userManagementService = {
   async fetchUsers(): Promise<User[]> {
+    if (!db) {
+      return mockData.users.map(u => ({
+        ...u,
+        displayName: u.displayName || u.name || "Unknown User",
+        email: u.email || "",
+      } as User));
+    }
+
     const usersRef = collection(db, "users");
     const q = query(usersRef, orderBy("createdAt", "desc"));
     const querySnapshot = await getDocs(q);
@@ -58,6 +67,21 @@ export const userManagementService = {
   },
 
   subscribeUsers(onUpdate: (users: User[]) => void): () => void {
+    if (!db) {
+      const triggerUpdate = () => {
+        const users = mockData.users.map(u => ({
+          ...u,
+          displayName: u.displayName || u.name || "Unknown User",
+          email: u.email || "",
+        } as User));
+        onUpdate(users);
+      };
+      
+      triggerUpdate();
+      const interval = setInterval(triggerUpdate, 1000);
+      return () => clearInterval(interval);
+    }
+
     const usersRef = collection(db, "users");
     const q = query(usersRef, orderBy("createdAt", "desc"));
     
@@ -91,11 +115,44 @@ export const userManagementService = {
       throw new Error("A valid email address is required.");
     }
 
+    if (!db) {
+      // Local/Sandbox in-memory user creation
+      const existing = mockData.users.find(u => u.email.toLowerCase() === data.email.toLowerCase());
+      if (existing) {
+        throw new Error("This email is already registered.");
+      }
+
+      const mockUid = `user-${Math.random().toString(36).substr(2, 9)}`;
+      const newUser: User = {
+        id: mockUid,
+        email: data.email,
+        displayName: data.displayName,
+        role: data.role,
+        status: 'active',
+        departmentId: data.departmentId || null,
+        createdAt: new Date() as any,
+        updatedAt: new Date() as any,
+      };
+
+      mockData.users.push(newUser);
+
+      if (performingUser) {
+        await auditService.logAction({
+          action: 'USER_CREATE',
+          targetId: newUser.id,
+          targetType: 'user',
+          details: { role: newUser.role, email: newUser.email },
+          performedBy: performingUser
+        });
+      }
+
+      return newUser;
+    }
+
     const secondaryAuth = getSecondaryAuth();
     
     try {
       // 2. Create account in Firebase Auth
-      // This will automatically throw 'auth/email-already-in-use' if email exists
       const userCredential = await createUserWithEmailAndPassword(
         secondaryAuth, 
         data.email, 
@@ -147,9 +204,23 @@ export const userManagementService = {
   },
 
   async deleteUser(userId: string, performingUser?: User): Promise<void> {
-    // Note: This only deletes from Firestore. 
-    // Deleting from Auth requires Admin SDK or the user being logged in.
-    // For now, we'll mark as inactive or delete from Firestore.
+    if (!db) {
+      const idx = mockData.users.findIndex(u => u.id === userId);
+      if (idx !== -1) {
+        mockData.users.splice(idx, 1);
+      }
+      if (performingUser) {
+        await auditService.logAction({
+          action: 'USER_DELETE',
+          targetId: userId,
+          targetType: 'user',
+          details: { },
+          performedBy: performingUser
+        });
+      }
+      return;
+    }
+
     await deleteDoc(doc(db, "users", userId));
 
     if (performingUser) {
@@ -164,6 +235,24 @@ export const userManagementService = {
   },
 
   async updateUserStatus(userId: string, status: 'active' | 'inactive', performingUser?: User): Promise<void> {
+    if (!db) {
+      const u = mockData.users.find(x => x.id === userId);
+      if (u) {
+        u.status = status;
+        u.updatedAt = new Date();
+      }
+      if (performingUser) {
+        await auditService.logAction({
+          action: 'USER_STATUS_CHANGE',
+          targetId: userId,
+          targetType: 'user',
+          details: { status },
+          performedBy: performingUser
+        });
+      }
+      return;
+    }
+
     await updateDoc(doc(db, "users", userId), {
       status,
       updatedAt: serverTimestamp(),
@@ -181,6 +270,24 @@ export const userManagementService = {
   },
 
   async updateUserRole(userId: string, role: 'admin' | 'teacher' | 'student', performingUser?: User): Promise<void> {
+    if (!db) {
+      const u = mockData.users.find(x => x.id === userId);
+      if (u) {
+        u.role = role;
+        u.updatedAt = new Date();
+      }
+      if (performingUser) {
+        await auditService.logAction({
+          action: 'USER_ROLE_CHANGE',
+          targetId: userId,
+          targetType: 'user',
+          details: { role },
+          performedBy: performingUser
+        });
+      }
+      return;
+    }
+
     await updateDoc(doc(db, "users", userId), {
       role,
       updatedAt: serverTimestamp(),
@@ -197,3 +304,4 @@ export const userManagementService = {
     }
   }
 };
+

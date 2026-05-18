@@ -1,7 +1,7 @@
 import Ajv from 'ajv';
 import addFormats from 'ajv-formats';
 import schema from '@/lib/schemas/firestore.schema.json';
-import type { User, Schedule, Course, Room } from './firestore.types';
+import type { User, Schedule, Course, Room } from '@/lib/types/firestore.types';
 
 const ajv = new Ajv({ allErrors: true });
 addFormats(ajv);

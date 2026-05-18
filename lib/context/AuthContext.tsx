@@ -16,12 +16,16 @@ import {
 import { getAuthInstance, getDb } from '@/lib/firebase';
 import { User as UserProfile } from '@/lib/types/firestore.types';
 import { useRouter } from 'next/navigation';
+import { mockData } from '@/lib/constants/mockData';
 
 interface AuthContextType {
   user: FirebaseUser | null;
   profile: UserProfile | null;
   loading: boolean;
   signOut: () => Promise<void>;
+  login: (email: string, password: string) => Promise<void>;
+  setDemoProfile: (role: 'admin' | 'teacher' | 'student') => void;
+  isDemoMode: boolean;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -29,6 +33,9 @@ const AuthContext = createContext<AuthContextType>({
   profile: null,
   loading: true,
   signOut: async () => { },
+  login: async () => { },
+  setDemoProfile: () => { },
+  isDemoMode: true,
 });
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
@@ -37,11 +44,26 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
+  const isDemoMode = !getAuthInstance();
+
   useEffect(() => {
     const auth = getAuthInstance();
     const db = getDb();
 
     if (!auth) {
+      // Local/Sandbox Demo Mode - Restore from localStorage if present
+      if (typeof window !== 'undefined') {
+        const storedUser = localStorage.getItem('demo_user');
+        if (storedUser) {
+          try {
+            const parsed = JSON.parse(storedUser);
+            setUser(parsed.firebaseUser);
+            setProfile(parsed.profile);
+          } catch (e) {
+            console.error("Error parsing demo_user from localStorage", e);
+          }
+        }
+      }
       setLoading(false);
       return;
     }
@@ -102,22 +124,91 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     };
   }, []);
 
-  const signOut = async () => {
+  const login = async (email: string, password: string) => {
     const auth = getAuthInstance();
-    if (!auth) return;
-    try {
-      await firebaseSignOut(auth);
-      router.push('/login');
-    } catch (error) {
-      console.error("Error signing out:", error);
+    if (auth) {
+      await signInWithEmailAndPassword(auth, email, password);
+    } else {
+      // Local/Sandbox Demo Login
+      const matched = mockData.users.find(u => u.email.toLowerCase() === email.toLowerCase());
+      if (matched && password === 'Password123!') {
+        const mockFirebaseUser = {
+          uid: matched.uid,
+          email: matched.email,
+          displayName: matched.displayName,
+          emailVerified: true,
+        } as any;
+
+        setUser(mockFirebaseUser);
+        setProfile(matched);
+
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('demo_user', JSON.stringify({
+            firebaseUser: mockFirebaseUser,
+            profile: matched
+          }));
+        }
+      } else {
+        throw new Error(
+          "Invalid credentials. Hint: In Sandbox Demo mode, use 'Password123!' with a pre-configured email: 'wwen485@gmail.com' (Admin), 'john.smith@university.edu' (Teacher), or 'alice.brown@university.edu' (Student)."
+        );
+      }
     }
   };
 
+  const setDemoProfile = (role: 'admin' | 'teacher' | 'student') => {
+    const matched = mockData.users.find(u => u.role === role);
+    if (matched) {
+      const mockFirebaseUser = {
+        uid: matched.uid,
+        email: matched.email,
+        displayName: matched.displayName,
+        emailVerified: true,
+      } as any;
+
+      setUser(mockFirebaseUser);
+      setProfile(matched);
+      
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('demo_user', JSON.stringify({
+          firebaseUser: mockFirebaseUser,
+          profile: matched
+        }));
+      }
+
+      // Force push router to corresponding dashboard
+      const redirectPath =
+        role === 'admin' ? '/dashboard' :
+        role === 'teacher' ? '/teacher' : '/student';
+      router.push(redirectPath);
+    }
+  };
+
+  const signOut = async () => {
+    const auth = getAuthInstance();
+    if (auth) {
+      try {
+        await firebaseSignOut(auth);
+      } catch (error) {
+        console.error("Error signing out:", error);
+      }
+    }
+    
+    // Clear demo local state
+    setUser(null);
+    setProfile(null);
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('demo_user');
+    }
+    router.push('/login');
+  };
+
   return (
-    <AuthContext.Provider value={{ user, profile, loading, signOut }}>
+    <AuthContext.Provider value={{ user, profile, loading, signOut, login, setDemoProfile, isDemoMode }}>
       {children}
     </AuthContext.Provider>
   );
 };
 
 export const useAuth = () => useContext(AuthContext);
+

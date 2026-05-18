@@ -1,6 +1,7 @@
 import * as React from "react";
 import { TeacherSidebar } from "./TeacherSidebar";
 import { Header } from "./Header";
+import { AiChatDrawer } from "../ai/AiChatDrawer";
 
 interface TeacherAppShellProps {
   children: React.ReactNode;
@@ -8,7 +9,7 @@ interface TeacherAppShellProps {
 
 export function TeacherAppShell({ children }: TeacherAppShellProps) {
   return (
-    <div className="flex h-screen bg-bg overflow-hidden font-manrope">
+    <div className="flex h-screen bg-bg overflow-hidden font-manrope relative">
       <TeacherSidebar />
       <div className="flex flex-1 flex-col overflow-hidden">
         <Header />
@@ -18,6 +19,7 @@ export function TeacherAppShell({ children }: TeacherAppShellProps) {
           </div>
         </main>
       </div>
+      <AiChatDrawer />
     </div>
   );
 }

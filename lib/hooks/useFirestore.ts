@@ -1,8 +1,9 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { collection, getDocs, query, Query, QueryConstraint } from 'firebase/firestore';
+import { collection, getDocs, query, QueryConstraint } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { mockData } from '@/lib/constants/mockData';
 import type { User, Schedule, Course, Room } from '@/lib/types/firestore.types';
 
 export function useFirestoreCollection<T>(
@@ -16,6 +17,17 @@ export function useFirestoreCollection<T>(
   const fetchData = useCallback(async () => {
     try {
       setLoading(true);
+      
+      // Fallback if Firebase is not configured/offline
+      if (!db) {
+        // Simulate a small network delay for premium visual animations/loading state
+        await new Promise((resolve) => setTimeout(resolve, 600));
+        const mocked = (mockData[collectionName as keyof typeof mockData] || []) as T[];
+        setData(mocked);
+        setError(null);
+        return;
+      }
+
       const collectionRef = collection(db, collectionName);
       const q = queryConstraints && queryConstraints.length > 0 
         ? query(collectionRef, ...queryConstraints)
@@ -63,3 +75,4 @@ export function useCourses() {
 export function useRooms() {
   return useFirestoreCollection<Room>('rooms');
 }
+

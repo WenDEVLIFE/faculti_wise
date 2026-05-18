@@ -1,10 +1,10 @@
 import * as React from "react";
-import { 
-  BookOpen, 
-  Clock, 
-  MapPin, 
-  Calendar, 
-  CheckCircle2, 
+import {
+  BookOpen,
+  Clock,
+  MapPin,
+  Calendar,
+  CheckCircle2,
   AlertCircle,
   ArrowRight
 } from "lucide-react";

@@ -7,6 +7,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { useAuth } from "@/lib/context/AuthContext";
 import { getDb } from "@/lib/firebase";
+import { mockData } from "@/lib/constants/mockData";
 import {
   collection,
   query,
@@ -33,9 +34,42 @@ export default function TimetableView({ title, subtitle }: TimetableViewProps) {
 
     const db = getDb();
     if (!db) {
-      setError("Firebase database not initialized");
-      setLoading(false);
-      return;
+      // Offline/Demo Mode fallback with continuous synchronization
+      const triggerMockUpdate = () => {
+        const filteredSchedules = profile.role === 'teacher' 
+          ? mockData.schedules.filter(s => s.teacherId === profile.id)
+          : mockData.schedules;
+
+        const enriched: TimetableEntry[] = filteredSchedules.map(s => {
+          const course = mockData.courses.find(c => c.id === s.courseId);
+          const room = mockData.rooms.find(r => r.id === s.roomId);
+          
+          let teacherDisplayName = profile.displayName;
+          if (s.teacherId !== profile.id) {
+            const matchingUser = mockData.users.find(u => u.id === s.teacherId);
+            teacherDisplayName = matchingUser ? matchingUser.displayName : s.teacherId;
+          }
+
+          return {
+            id: s.id,
+            courseCode: s.courseId,
+            courseName: course?.name || s.courseId,
+            teacherName: teacherDisplayName,
+            room: room ? `${room.name} (${room.building})` : s.roomId,
+            day: s.dayOfWeek as DayOfWeek,
+            startTime: s.startTime,
+            endTime: s.endTime,
+            type: room?.type === "laboratory" ? "lab" : "lecture",
+          };
+        });
+
+        setEntries(enriched);
+        setLoading(false);
+      };
+
+      triggerMockUpdate();
+      const interval = setInterval(triggerMockUpdate, 1000);
+      return () => clearInterval(interval);
     }
 
     setLoading(true);

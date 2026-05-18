@@ -4,9 +4,10 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createUserWithEmailAndPassword } from "firebase/auth";
-import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from "@/lib/firebase";
 import { appRoutes } from "@/lib/constants/routes.constants";
+import { mockData } from "@/lib/constants/mockData";
 
 export default function RegisterPageView() {
   const router = useRouter();
@@ -21,20 +22,41 @@ export default function RegisterPageView() {
     setError(null);
     setLoading(true);
     try {
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      const user = userCredential.user;
+      let registeredUid = `user-${Math.random().toString(36).substr(2, 9)}`;
+      let registeredEmail = email;
 
-      // Create user profile in Firestore
-      await setDoc(doc(db, 'users', user.uid), {
-        id: user.uid,
-        email: user.email,
-        displayName: displayName,
-        role: 'student',
-        status: 'active',
-        departmentId: null,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-      });
+      if (auth) {
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        const user = userCredential.user;
+        registeredUid = user.uid;
+        registeredEmail = user.email || email;
+      }
+
+      // Create user profile in Firestore if active, otherwise fallback to sandbox mockData
+      if (db) {
+        await setDoc(doc(db, 'users', registeredUid), {
+          id: registeredUid,
+          email: registeredEmail,
+          displayName: displayName,
+          role: 'student',
+          status: 'active',
+          departmentId: null,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        });
+      } else {
+        mockData.users.push({
+          id: registeredUid,
+          uid: registeredUid,
+          email: registeredEmail,
+          displayName: displayName,
+          role: 'student',
+          status: 'active',
+          departmentId: null,
+          createdAt: new Date() as any,
+          updatedAt: new Date() as any,
+        });
+      }
 
       router.push(appRoutes.dashboard);
     } catch (err: any) {

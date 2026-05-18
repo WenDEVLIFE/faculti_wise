@@ -8,13 +8,10 @@ import { Eye, EyeOff } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/context/AuthContext";
-import { signInWithEmailAndPassword } from "firebase/auth";
-import { auth, getAuthInstance } from "@/lib/firebase";
-import { User as UserProfile } from "@/lib/types/firestore.types";
 
 export default function LoginPageView() {
   const router = useRouter();
-  const { profile } = useAuth();
+  const { profile, login, setDemoProfile, isDemoMode, loading: authLoading } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -36,7 +33,7 @@ export default function LoginPageView() {
     setError(null);
     setLoading(true);
     try {
-      await signInWithEmailAndPassword(auth, email, password);
+      await login(email, password);
       // Redirection is handled by the useEffect watching the profile
     } catch (err: any) {
       setError(err.message || "Failed to sign in. Please check your credentials.");
@@ -142,44 +139,51 @@ export default function LoginPageView() {
                 {loading ? "Signing in..." : "Sign in"}
               </button>
 
-              {/*
-              <Link
-                href={appRoutes.dashboard}
-                className="inline-flex h-12 w-full items-center justify-center gap-3 rounded-2xl border border-amber-200 bg-amber-50/50 px-5 text-sm font-semibold text-amber-900 transition hover:border-amber-300 hover:bg-amber-50"
-              >
-                <span className="flex h-5 w-5 items-center justify-center rounded-full border border-amber-300 text-[10px] font-bold text-amber-600">
-                  A
-                </span>
-                Test Access (Admin)
-              </Link>
-
-              <Link
-                href={appRoutes.teacherDashboard}
-                className="inline-flex h-12 w-full items-center justify-center gap-3 rounded-2xl border border-teal-200 bg-teal-50/50 px-5 text-sm font-semibold text-teal-900 transition hover:border-teal-300 hover:bg-teal-50"
-              >
-                <span className="flex h-5 w-5 items-center justify-center rounded-full border border-teal-300 text-[10px] font-bold text-teal-600">
-                  T
-                </span>
-                Test Access (Teacher)
-              </Link>
-
-              <Link
-                href={appRoutes.studentDashboard}
-                className="inline-flex h-12 w-full items-center justify-center gap-3 rounded-2xl border border-indigo-200 bg-indigo-50/50 px-5 text-sm font-semibold text-indigo-900 transition hover:border-indigo-300 hover:bg-indigo-50"
-              >
-                <span className="flex h-5 w-5 items-center justify-center rounded-full border border-indigo-300 text-[10px] font-bold text-indigo-600">
-                  S
-                </span>
-                Test Access (Student)
-              </Link>
-
-              <p className="text-center text-sm text-stone-600">
-                New here?{" "}
-                <Link href="/register" className="font-medium text-amber-700">
-                  Create an account
-                </Link>
-              </p>
-              */}
+              {isDemoMode && (
+                <div className="mt-6 pt-6 border-t border-stone-200/60 space-y-4">
+                  <div className="flex items-center gap-2">
+                    <span className="flex h-2 w-2 rounded-full bg-amber-500 animate-pulse"></span>
+                    <p className="text-xs font-semibold uppercase tracking-[0.2em] text-stone-500">
+                      Developer Sandbox Mode
+                    </p>
+                  </div>
+                  <p className="text-xs text-stone-500 leading-relaxed">
+                    Firebase is currently offline/unconfigured. You can instantly log in as any role with a single click below, or use the pre-configured credentials.
+                  </p>
+                  <div className="grid grid-cols-3 gap-2 pt-1">
+                    <button
+                      type="button"
+                      onClick={() => setDemoProfile('admin')}
+                      className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-amber-200 bg-amber-50/50 text-xs font-semibold text-amber-900 transition hover:border-amber-300 hover:bg-amber-50 cursor-pointer"
+                    >
+                      <span className="flex h-4 w-4 items-center justify-center rounded-full border border-amber-300 text-[9px] font-bold text-amber-600">A</span>
+                      Admin
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setDemoProfile('teacher')}
+                      className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-teal-200 bg-teal-50/50 text-xs font-semibold text-teal-900 transition hover:border-teal-300 hover:bg-teal-50 cursor-pointer"
+                    >
+                      <span className="flex h-4 w-4 items-center justify-center rounded-full border border-teal-300 text-[9px] font-bold text-teal-600">T</span>
+                      Teacher
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setDemoProfile('student')}
+                      className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-indigo-200 bg-indigo-50/50 text-xs font-semibold text-indigo-900 transition hover:border-indigo-300 hover:bg-indigo-50 cursor-pointer"
+                    >
+                      <span className="flex h-4 w-4 items-center justify-center rounded-full border border-indigo-300 text-[9px] font-bold text-indigo-600">S</span>
+                      Student
+                    </button>
+                  </div>
+                  <div className="rounded-xl bg-stone-50 p-3 text-[11px] text-stone-500 border border-stone-100 flex flex-col gap-1 font-mono">
+                    <div><strong>Admin:</strong> wwen485@gmail.com</div>
+                    <div><strong>Teacher:</strong> john.smith@university.edu</div>
+                    <div><strong>Student:</strong> alice.brown@university.edu</div>
+                    <div className="text-stone-400 mt-1">🔑 Password for all: Password123!</div>
+                  </div>
+                </div>
+              )}
             </form>
           </div>
         </section>
@@ -187,3 +191,4 @@ export default function LoginPageView() {
     </main>
   );
 }
+
