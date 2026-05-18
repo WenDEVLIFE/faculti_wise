@@ -4,6 +4,7 @@ import * as React from "react";
 import { Bell, Search, User, LogOut, Settings as SettingsIcon } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { useAuth } from "@/lib/context/AuthContext";
+import { NotificationBell } from "@/components/notifications/NotificationBell";
 
 export function Header() {
   const { profile, signOut } = useAuth();
@@ -23,10 +24,7 @@ export function Header() {
         </div>
       </div>
       <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" className="relative">
-          <Bell className="h-5 w-5 text-text-muted" />
-          <span className="absolute top-2 right-2 flex h-2 w-2 rounded-full bg-accent"></span>
-        </Button>
+        <NotificationBell />
         <div className="h-8 w-[1px] bg-border mx-2"></div>
         <div className="flex items-center gap-3">
           <div className="flex flex-col items-end leading-tight hidden lg:flex mr-1">

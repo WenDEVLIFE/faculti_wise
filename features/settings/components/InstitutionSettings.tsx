@@ -18,6 +18,7 @@ import { AddEditTermModal } from "@/features/sections/components/AddEditTermModa
 import { TermCard } from "@/features/sections/components/TermCard";
 import { DataImportModal } from "@/features/data-import/components/DataImportModal";
 import { useAuth } from "@/lib/context/AuthContext";
+import { BackupManager } from "@/features/backups/components/BackupManager";
 
 export function InstitutionSettings() {
   const { profile } = useAuth();
@@ -608,6 +609,8 @@ export function InstitutionSettings() {
           </div>
         </CardContent>
       </Card>
+
+      <BackupManager />
 
       {/* Modals */}
       <AddEditDepartmentModal

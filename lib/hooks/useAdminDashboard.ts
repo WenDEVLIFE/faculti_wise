@@ -26,6 +26,7 @@ import type {
 } from '@/lib/types/admin-dashboard.types';
 import type { User, Schedule, Course, Room } from '@/lib/types/firestore.types';
 import { mockData } from '@/lib/constants/mockData';
+import { notificationService } from '@/features/notifications/notifications.service';
 
 // Fallback initial state
 const defaultUserStats: UserStats = {
@@ -76,6 +77,15 @@ export function useAdminDashboard() {
       startedBy: startedByName
     };
 
+    // Trigger run-initiated alert
+    await notificationService.createNotification(
+      'all',
+      'Optimization Run Initiated',
+      `Admin initiated a new timetable schedule optimization run for ${termName}.`,
+      'schedule_update',
+      { term: termName }
+    );
+
     if (!db) {
       // Offline/Demo Mode: Simulate run using local state and intervals
       const runId = `run-${Date.now()}`;
@@ -89,20 +99,33 @@ export function useAdminDashboard() {
 
       // Progress Simulation
       let currentProgress = 0;
-      const interval = setInterval(() => {
+      const interval = setInterval(async () => {
         currentProgress += Math.floor(Math.random() * 15) + 10;
         if (currentProgress >= 100) {
           currentProgress = 100;
           clearInterval(interval);
+          
+          const conflicts = Math.floor(Math.random() * 4);
+          const efficiency = Math.round((92 + Math.random() * 6) * 10) / 10;
+
           setLocalRuns(prev => 
             prev.map(r => r.id === runId ? {
               ...r,
               status: 'completed',
               progress: 100,
-              conflicts: Math.floor(Math.random() * 4), // 0-3 conflicts
-              efficiency: Math.round((92 + Math.random() * 6) * 10) / 10, // 92% - 98%
+              conflicts,
+              efficiency,
               completedAt: new Date()
             } : r)
+          );
+
+          // Alert on completion
+          await notificationService.createNotification(
+            'all',
+            'Optimization Completed Successfully',
+            `Timetable optimization run completed for ${termName} with ${conflicts} overlaps and ${efficiency}% efficiency score.`,
+            'schedule_update',
+            { term: termName, runId }
           );
         } else {
           setLocalRuns(prev => 
@@ -148,13 +171,26 @@ export function useAdminDashboard() {
         try {
           if (currentProgress >= 100) {
             clearInterval(interval);
+            
+            const conflicts = Math.floor(Math.random() * 4);
+            const efficiency = Math.round((92 + Math.random() * 6) * 10) / 10;
+
             await updateDoc(doc(db, 'scheduler_runs', runId), {
               status: 'completed',
               progress: 100,
-              conflicts: Math.floor(Math.random() * 4),
-              efficiency: Math.round((92 + Math.random() * 6) * 10) / 10,
+              conflicts,
+              efficiency,
               completedAt: serverTimestamp()
             });
+
+            // Alert on completion
+            await notificationService.createNotification(
+              'all',
+              'Optimization Completed Successfully',
+              `Timetable optimization run completed for ${termName} with ${conflicts} overlaps and ${efficiency}% efficiency score.`,
+              'schedule_update',
+              { term: termName, runId }
+            );
           } else {
             await updateDoc(doc(db, 'scheduler_runs', runId), {
               progress: currentProgress
