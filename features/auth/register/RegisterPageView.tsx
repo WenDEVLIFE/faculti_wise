@@ -1,15 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { Link, useNavigate } from "react-router-dom";
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { getAuthInstance, getDb } from "@/lib/firebase";
 import { appRoutes } from "@/lib/constants/routes.constants";
 
 export default function RegisterPageView() {
-  const router = useRouter();
+  const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
@@ -51,7 +50,7 @@ export default function RegisterPageView() {
         updatedAt: serverTimestamp(),
       });
 
-      router.push(appRoutes.dashboard);
+      navigate(appRoutes.dashboard);
     } catch (err: any) {
       setError(err.message || "Failed to create account.");
     } finally {
@@ -175,7 +174,7 @@ export default function RegisterPageView() {
 
               <p className="text-center text-sm text-stone-600">
                 Already have an account?{" "}
-                <Link href="/login" className="font-medium text-amber-700">
+                <Link to="/login" className="font-medium text-amber-700">
                   Sign in
                 </Link>
               </p>

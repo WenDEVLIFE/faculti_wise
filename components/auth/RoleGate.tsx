@@ -1,7 +1,7 @@
 "use client";
 
 import { useAuth } from "@/lib/context/AuthContext";
-import { useRouter } from "next/navigation";
+import { useNavigate } from "react-router-dom";
 import { useEffect } from "react";
 import { appRoutes } from "@/lib/constants/routes.constants";
 
@@ -17,13 +17,13 @@ export function RoleGate({
   redirectPath = appRoutes.login 
 }: RoleGateProps) {
   const { profile, loading } = useAuth();
-  const router = useRouter();
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (!loading && (!profile || !allowedRoles.includes(profile.role))) {
-      router.push(redirectPath);
+      navigate(redirectPath);
     }
-  }, [profile, loading, allowedRoles, router, redirectPath]);
+  }, [profile, loading, allowedRoles, navigate, redirectPath]);
 
   if (loading) {
     return (

@@ -15,7 +15,6 @@ import {
 } from 'firebase/firestore';
 import { getAuthInstance, getDb } from '@/lib/firebase';
 import { User as UserProfile } from '@/lib/types/firestore.types';
-import { useRouter } from 'next/navigation';
 import { mockData } from '@/lib/constants/mockData';
 
 interface AuthContextType {
@@ -42,7 +41,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<FirebaseUser | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
-  const router = useRouter();
 
   const isDemoMode = !getAuthInstance();
 
@@ -180,7 +178,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       const redirectPath =
         role === 'admin' ? '/dashboard' :
         role === 'teacher' ? '/teacher' : '/student';
-      router.push(redirectPath);
+      window.location.href = redirectPath;
     }
   };
 
@@ -200,7 +198,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     if (typeof window !== 'undefined') {
       localStorage.removeItem('demo_user');
     }
-    router.push('/login');
+    window.location.href = '/login';
   };
 
   return (
