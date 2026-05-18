@@ -10,6 +10,7 @@ import CourseOfferingsView from "@/features/course-offerings/CourseOfferingsView
 import RoomsView from "@/features/rooms/RoomsView";
 import SettingsView from "@/features/settings/SettingsView";
 import TimetableView from "@/features/timetables/TimetableView";
+import { InstitutionSettings } from "@/features/settings/components/InstitutionSettings";
 import UserManagementView from "@/features/user-management/UserManagementView";
 
 export function AdminDashboardView() {
@@ -17,6 +18,18 @@ export function AdminDashboardView() {
   const tab = searchParamsHook.get("tab") || "dashboard";
 
   switch (tab) {
+    case "departments":
+      return (
+        <Suspense fallback={<div className="animate-pulse h-[600px] bg-surface-alt rounded-xl" />}>
+          <div className="space-y-6">
+            <div>
+              <h1 className="text-4xl font-bold tracking-tight text-text font-source-serif">Departments</h1>
+              <p className="text-text-muted mt-1">Configure academic departments, assign chairs, and set up academic terms.</p>
+            </div>
+            <InstitutionSettings />
+          </div>
+        </Suspense>
+      );
     case "timetables":
       return (
         <Suspense fallback={<div className="animate-pulse h-[600px] bg-surface-alt rounded-xl" />}>

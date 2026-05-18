@@ -13,7 +13,8 @@ import {
   Menu,
   GraduationCap,
   History as HistoryIcon,
-  ListChecks
+  ListChecks,
+  School
 } from "lucide-react";
 import { useAuth } from "@/lib/context/AuthContext";
 
@@ -23,7 +24,8 @@ const navigation = [
   { name: "Faculty Load", tab: "faculty-load", href: "/dashboard?tab=faculty-load", icon: Users },
   { name: "Courses", tab: "courses", href: "/dashboard?tab=courses", icon: BookOpen },
   { name: "Course Offerings", tab: "offerings", href: "/dashboard?tab=offerings", icon: ListChecks },
-  { name: "Rooms & Labs", tab: "rooms", href: "/dashboard?tab=rooms", icon: Building2 },
+  { name: "Departments", tab: "departments", href: "/dashboard?tab=departments", icon: Building2 },
+  { name: "Rooms & Labs", tab: "rooms", href: "/dashboard?tab=rooms", icon: School },
   { name: "Users", tab: "users", href: "/dashboard?tab=users", icon: Users },
   { name: "Audit Logs", tab: "audit", href: "/dashboard?tab=audit", icon: HistoryIcon },
   { name: "Settings", tab: "settings", href: "/dashboard?tab=settings", icon: Settings },
