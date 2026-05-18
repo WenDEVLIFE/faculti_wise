@@ -58,11 +58,11 @@ class NotificationService {
 
     try {
       const notifRef = collection(db, 'notifications');
-      // Query notifications that are for 'all', the user's role ('admin'/'teacher'/'student'), or specific user ID
+      // Query notifications that are for 'all' or specific user ID.
+      // We sort in-memory to prevent requiring a Firestore composite index.
       const q = query(
         notifRef,
-        where('userId', 'in', ['all', userId]),
-        orderBy('createdAt', 'desc')
+        where('userId', 'in', ['all', userId])
       );
 
       return onSnapshot(q, (snapshot) => {
@@ -71,12 +71,17 @@ class NotificationService {
           return {
             id: doc.id,
             ...data,
-            createdAt: data.createdAt?.toDate?.() || new Date(data.createdAt)
+            createdAt: data.createdAt?.toDate?.() || (data.createdAt ? new Date(data.createdAt) : new Date())
           } as Notification;
         });
+        
+        // Sort in-memory by createdAt descending
+        notifications.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+        
         onUpdate(notifications);
       }, (err) => {
-        console.error("Error subscribing to notifications:", err);
+        console.error("Error subscribing to notifications (falling back to mock):", err);
+        onUpdate([...mockNotifications]);
       });
     } catch (err) {
       console.error("Failed to set up notifications listener:", err);

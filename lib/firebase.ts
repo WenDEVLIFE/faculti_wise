@@ -36,8 +36,8 @@ export const getAuthInstance = () => {
 };
 
 // For backward compatibility while we refactor, but it's better to use the getters
-export const db = typeof window !== "undefined" ? (app ? getFirestore(app) : null) : null;
-export const auth = typeof window !== "undefined" ? (app ? getAuth(app) : null as any) : null as any;
+export const db = typeof window !== "undefined" ? (app ? getDb() : null) : null;
+export const auth = typeof window !== "undefined" ? (app ? getAuthInstance() : null as any) : null as any;
 
 if (!isConfigValid) {
   console.warn("Firebase API key is missing. Authentication and Firestore will be disabled.");
