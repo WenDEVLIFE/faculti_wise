@@ -611,3 +611,4 @@ export function StudentScheduleView() {
     </div>
   );
 }
+export default StudentScheduleView;

@@ -1,8 +1,7 @@
 "use client";
 
 import * as React from "react";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import {
   LayoutDashboard,
@@ -26,7 +25,8 @@ const navigation = [
 
 export function TeacherSidebar() {
   const { profile } = useAuth();
-  const pathname = usePathname();
+  const location = useLocation();
+  const pathname = location.pathname;
 
   // Get initials for the avatar placeholder
   const initials = profile?.displayName
@@ -36,7 +36,7 @@ export function TeacherSidebar() {
   return (
     <div className="flex h-full w-64 flex-col border-r border-border bg-surface">
       <div className="flex h-16 items-center border-b border-border px-6">
-        <Link href={appRoutes.teacherDashboard} className="flex items-center gap-2">
+        <Link to={appRoutes.teacherDashboard} className="flex items-center gap-2">
           <div className="flex h-8 w-8 items-center justify-center rounded-md bg-teal-600 text-white shadow-sm">
             <GraduationCap className="h-5 w-5" />
           </div>
@@ -52,7 +52,7 @@ export function TeacherSidebar() {
             return (
               <Link
                 key={item.name}
-                href={item.href}
+                to={item.href}
                 className={cn(
                   "group flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
                   isActive

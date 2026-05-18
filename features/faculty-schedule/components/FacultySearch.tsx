@@ -3,15 +3,14 @@
 import React from "react";
 import { Search, Building2, User } from "lucide-react";
 import { Input } from "@/components/ui/Input";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "react-router-dom";
 
 interface FacultySearchProps {
   departments: { id: string; name: string }[];
 }
 
 export function FacultySearch({ departments }: FacultySearchProps) {
-  const router = useRouter();
-  const searchParams = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   
   const [query, setQuery] = React.useState(searchParams.get("instructor") || "");
   const [departmentId, setDepartmentId] = React.useState(searchParams.get("dept") || "all");
@@ -21,7 +20,7 @@ export function FacultySearch({ departments }: FacultySearchProps) {
     if (query) params.set("instructor", query);
     if (departmentId !== "all") params.set("dept", departmentId);
     
-    router.push(`?${params.toString()}`);
+    setSearchParams(params);
   };
 
   return (

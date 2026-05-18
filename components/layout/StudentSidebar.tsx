@@ -1,8 +1,7 @@
 "use client";
 
 import * as React from "react";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { Link, useSearchParams } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import {
   LayoutDashboard,
@@ -12,23 +11,23 @@ import {
   GraduationCap,
   ClipboardList
 } from "lucide-react";
-import { appRoutes } from "@/lib/constants/routes.constants";
 
 const navigation = [
-  { name: "My Class Schedule", href: appRoutes.studentSchedule, icon: LayoutDashboard },
-  { name: "Faculty Search", href: appRoutes.studentDashboard, icon: Calendar },
-  { name: "Department Schedule", href: appRoutes.studentDepartmentSchedule, icon: Building2 },
-  { name: "Credit Checklist", href: appRoutes.studentChecklist, icon: ClipboardList },
-  { name: "Settings", href: appRoutes.studentSettings, icon: User },
+  { name: "Faculty Search", tab: "faculty-search", href: "/student", icon: Calendar },
+  { name: "My Class Schedule", tab: "schedule", href: "/student?tab=schedule", icon: LayoutDashboard },
+  { name: "Department Schedule", tab: "department-schedule", href: "/student?tab=department-schedule", icon: Building2 },
+  { name: "Credit Checklist", tab: "checklist", href: "/student?tab=checklist", icon: ClipboardList },
+  { name: "Settings", tab: "settings", href: "/student?tab=settings", icon: User },
 ];
 
 export function StudentSidebar() {
-  const pathname = usePathname();
+  const [searchParams] = useSearchParams();
+  const activeTab = searchParams.get("tab") || "faculty-search";
 
   return (
     <div className="flex h-full w-64 flex-col border-r border-border bg-surface">
       <div className="flex h-16 items-center border-b border-border px-6">
-        <Link href={appRoutes.studentDashboard} className="flex items-center gap-2">
+        <Link to="/student" className="flex items-center gap-2">
           <div className="flex h-8 w-8 items-center justify-center rounded-md bg-indigo-600 text-white shadow-sm">
             <GraduationCap className="h-5 w-5" />
           </div>
@@ -40,11 +39,11 @@ export function StudentSidebar() {
       <div className="flex flex-1 flex-col overflow-y-auto px-4 py-6">
         <nav className="flex flex-1 flex-col gap-1">
           {navigation.map((item) => {
-            const isActive = pathname === item.href;
+            const isActive = activeTab === item.tab;
             return (
               <Link
                 key={item.name}
-                href={item.href}
+                to={item.href}
                 className={cn(
                   "group flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
                   isActive

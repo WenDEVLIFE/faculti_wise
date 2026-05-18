@@ -19,7 +19,7 @@ interface ProposedSchedule {
   semester: string;
 }
 
-export default function MySchedulePage() {
+export function MySchedulePage() {
   const { profile } = useAuth();
   const [requestText, setRequestText] = useState("");
   const [loading, setLoading] = useState(false);
@@ -315,3 +315,5 @@ User request: "${requestText}"`;
     </div>
   );
 }
+
+export default MySchedulePage;

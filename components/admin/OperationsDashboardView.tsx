@@ -34,7 +34,7 @@ import { auditService } from "@/features/audit/audit.service";
 import { AuditLog } from "@/lib/types/firestore.types";
 import { ErrorTelemetryConsole } from "@/features/errors/components/ErrorTelemetryConsole";
 
-export default function AdminDashboard() {
+export function OperationsDashboardView() {
   const { data, loading, error, triggerNewRun } = useAdminDashboard();
   const [liveLogs, setLiveLogs] = useState<AuditLog[]>([]);
   const [runningNewRun, setRunningNewRun] = useState(false);
@@ -307,15 +307,15 @@ export default function AdminDashboard() {
                         )}
 
                         <div className="flex items-center justify-between mt-3 text-[10px] text-text-muted">
-                          <span className="flex items-center gap-1">
-                            <Clock className="h-3 w-3" />
-                            Started: {new Date(run.startedAt).toLocaleTimeString()}
-                          </span>
-                          {run.completedAt && (
-                            <span>
-                              Completed: {new Date(run.completedAt).toLocaleTimeString()}
-                            </span>
-                          )}
+                           <span className="flex items-center gap-1">
+                             <Clock className="h-3 w-3" />
+                             Started: {new Date(run.startedAt).toLocaleTimeString()}
+                           </span>
+                           {run.completedAt && (
+                             <span>
+                               Completed: {new Date(run.completedAt).toLocaleTimeString()}
+                             </span>
+                           )}
                         </div>
                       </div>
                     );
@@ -557,7 +557,7 @@ export default function AdminDashboard() {
                   ))}
                   
                   <Button 
-                    onClick={() => window.location.href = '/audit'} 
+                    onClick={() => window.location.href = '/dashboard?tab=audit'} 
                     variant="ghost" 
                     className="w-full mt-2 text-primary hover:text-primary-strong text-xs font-semibold hover:bg-surface-alt/40 border border-border/40 py-2.5 rounded-lg"
                   >
@@ -575,3 +575,5 @@ export default function AdminDashboard() {
     </div>
   );
 }
+
+export default OperationsDashboardView;
