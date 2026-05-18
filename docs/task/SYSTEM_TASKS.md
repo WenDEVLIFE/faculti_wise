@@ -18,7 +18,7 @@ This document tracks the core system and infrastructure tasks for Faculty_Wise.
 - [x] **Faculty Profiles**: Detailed profiles including specialization, target units, and employment type.
 - [x] **Student Enrollment**: Basic student management and section assignment.
 - [x] **Teacher Availability**: UI for teachers to submit their preferred and unavailable time slots per term.
-- [ ] **Course Offerings**: Flow to define which courses are offered in a specific term before scheduling starts.
+- [x] **Course Offerings**: Flow to define which courses are offered in a specific term before scheduling starts.
 
 ## 4. Integration & Infrastructure
 - [ ] **Real-time Dashboard**: Admin overview with live stats on users, active runs, and system health.
