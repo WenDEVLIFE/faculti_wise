@@ -23,12 +23,16 @@ import { userManagementService } from "./user-management.service";
 import { User } from "@/lib/types/firestore.types";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/context/AuthContext";
+import { getDb } from "@/lib/firebase";
+import { collection, onSnapshot } from "firebase/firestore";
+import { mockData } from "@/lib/constants/mockData";
 
 export default function UserManagementView() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [departments, setDepartments] = useState<any[]>([]);
 
   useEffect(() => {
     setLoading(true);
@@ -40,7 +44,34 @@ export default function UserManagementView() {
     return () => unsubscribe();
   }, []);
 
+  useEffect(() => {
+    const db = getDb();
+    if (!db) {
+      setDepartments(mockData.departments);
+      return;
+    }
+
+    const deptRef = collection(db, "departments");
+    const unsubscribe = onSnapshot(deptRef, (snapshot) => {
+      const depts = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      setDepartments(depts);
+    });
+
+    return () => unsubscribe();
+  }, []);
+
   const { profile } = useAuth();
+
+  const handleAssignDepartment = async (userId: string, departmentId: string | null) => {
+    try {
+      await userManagementService.updateUserDepartment(userId, departmentId, profile || undefined);
+    } catch (error) {
+      console.error("Failed to assign department:", error);
+    }
+  };
 
   const handleToggleStatus = async (user: User) => {
     const newStatus = user.status === 'active' ? 'inactive' : 'active';
@@ -125,6 +156,7 @@ export default function UserManagementView() {
                 <tr className="border-b border-border bg-surface-alt/50">
                   <th className="px-8 py-4 text-xs font-semibold uppercase tracking-wider text-text-muted">User</th>
                   <th className="px-8 py-4 text-xs font-semibold uppercase tracking-wider text-text-muted">Role</th>
+                  <th className="px-8 py-4 text-xs font-semibold uppercase tracking-wider text-text-muted">Department</th>
                   <th className="px-8 py-4 text-xs font-semibold uppercase tracking-wider text-text-muted">Status</th>
                   <th className="px-8 py-4 text-xs font-semibold uppercase tracking-wider text-text-muted">Joined</th>
                   <th className="px-8 py-4 text-right text-xs font-semibold uppercase tracking-wider text-text-muted">Actions</th>
@@ -134,12 +166,12 @@ export default function UserManagementView() {
                 {loading ? (
                   Array.from({ length: 5 }).map((_, i) => (
                     <tr key={i} className="animate-pulse">
-                      <td colSpan={5} className="px-8 py-6 h-20 bg-surface/30" />
+                      <td colSpan={6} className="px-8 py-6 h-20 bg-surface/30" />
                     </tr>
                   ))
                 ) : filteredUsers.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="px-8 py-20 text-center text-text-muted">
+                    <td colSpan={6} className="px-8 py-20 text-center text-text-muted">
                       No users found matching your search.
                     </td>
                   </tr>
@@ -161,6 +193,33 @@ export default function UserManagementView() {
                       </td>
                       <td className="px-8 py-4">
                         <RoleBadge role={user.role} />
+                      </td>
+                      <td className="px-8 py-4">
+                        {user.role === 'teacher' ? (
+                          <div className="relative min-w-[160px]">
+                            <select
+                              value={user.departmentId || ""}
+                              onChange={(e) => handleAssignDepartment(user.id, e.target.value || null)}
+                              className="w-full pl-3 pr-8 py-1.5 bg-white border border-border rounded-xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all cursor-pointer appearance-none text-text"
+                            >
+                              <option value="">Unassigned</option>
+                              {departments.map((dept) => (
+                                <option key={dept.id} value={dept.id}>
+                                  {dept.name}
+                                </option>
+                              ))}
+                            </select>
+                            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2.5 text-text-muted">
+                              <svg className="fill-current h-3.5 w-3.5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                                <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" />
+                              </svg>
+                            </div>
+                          </div>
+                        ) : (
+                          <span className="text-xs text-text-muted font-medium">
+                            {departments.find(d => d.id === user.departmentId)?.name || "-"}
+                          </span>
+                        )}
                       </td>
                       <td className="px-8 py-4">
                         <StatusBadge status={user.status} />

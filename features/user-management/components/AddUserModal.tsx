@@ -1,10 +1,13 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { X, UserPlus, Mail, Lock, Shield, User as UserIcon } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { userManagementService } from "../user-management.service";
 import { useAuth } from "@/lib/context/AuthContext";
+import { getDb } from "@/lib/firebase";
+import { collection, onSnapshot } from "firebase/firestore";
+import { mockData } from "@/lib/constants/mockData";
 
 interface AddUserModalProps {
   isOpen: boolean;
@@ -16,9 +19,30 @@ export function AddUserModal({ isOpen, onClose }: AddUserModalProps) {
   const [password, setPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [role, setRole] = useState<'admin' | 'teacher' | 'student'>('student');
+  const [departmentId, setDepartmentId] = useState("");
+  const [departments, setDepartments] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { profile } = useAuth();
+
+  useEffect(() => {
+    const db = getDb();
+    if (!db) {
+      setDepartments(mockData.departments);
+      return;
+    }
+
+    const deptRef = collection(db, "departments");
+    const unsubscribe = onSnapshot(deptRef, (snapshot) => {
+      const depts = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      setDepartments(depts);
+    });
+
+    return () => unsubscribe();
+  }, []);
 
   if (!isOpen) return null;
 
@@ -33,6 +57,7 @@ export function AddUserModal({ isOpen, onClose }: AddUserModalProps) {
         displayName,
         role,
         password,
+        departmentId: role === 'teacher' && departmentId ? departmentId : null,
       }, profile || undefined);
       onClose();
       // Reset form
@@ -40,6 +65,7 @@ export function AddUserModal({ isOpen, onClose }: AddUserModalProps) {
       setPassword("");
       setDisplayName("");
       setRole("student");
+      setDepartmentId("");
     } catch (err: any) {
       setError(err.message || "Failed to create user.");
     } finally {
@@ -137,6 +163,24 @@ export function AddUserModal({ isOpen, onClose }: AddUserModalProps) {
                 </div>
               </div>
             </div>
+
+            {role === 'teacher' && (
+              <div className="space-y-2 animate-in fade-in slide-in-from-top-1 duration-300">
+                <label className="text-sm font-medium text-text-muted px-1">Department Assignment</label>
+                <select
+                  value={departmentId}
+                  onChange={(e) => setDepartmentId(e.target.value)}
+                  className="w-full h-12 px-4 bg-surface-alt border border-border rounded-xl outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-text cursor-pointer"
+                >
+                  <option value="">Unassigned</option>
+                  {departments.map((dept) => (
+                    <option key={dept.id} value={dept.id}>
+                      {dept.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
 
             <div className="flex gap-3 mt-8">
               <Button 

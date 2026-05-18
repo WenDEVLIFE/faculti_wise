@@ -16,12 +16,14 @@ import {
   getDoc,
   deleteDoc,
   updateDoc,
-  onSnapshot
+  onSnapshot,
+  where
 } from "firebase/firestore";
 import { initializeApp, getApp, getApps } from "firebase/app";
 import { getDb } from "@/lib/firebase";
 import { User } from "@/lib/types/firestore.types";
 import { auditService } from "../audit/audit.service";
+import { mockData } from "@/lib/constants/mockData";
 
 // Secondary Firebase app for administrative user creation
 const firebaseConfig = {
@@ -219,6 +221,54 @@ export const userManagementService = {
         targetId: userId,
         targetType: 'user',
         details: { role },
+        performedBy: performingUser
+      });
+    }
+  },
+
+  async updateUserDepartment(userId: string, departmentId: string | null, performingUser?: User): Promise<void> {
+    const db = getDb();
+    if (!db) {
+      // Sandbox/Demo Mode: Update in mockData
+      const user = mockData.users.find(u => u.id === userId || u.uid === userId);
+      if (user) {
+        user.departmentId = departmentId;
+        user.updatedAt = new Date();
+      }
+      const teacher = mockData.teachers.find(t => t.uid === userId);
+      if (teacher) {
+        teacher.departmentId = departmentId || "";
+      }
+      return;
+    }
+
+    // Firestore Mode: Update user document
+    await updateDoc(doc(db, "users", userId), {
+      departmentId,
+      updatedAt: serverTimestamp(),
+    });
+
+    // If teacher role, also update or sync in the teachers collection
+    try {
+      const teachersRef = collection(db, "teachers");
+      const q = query(teachersRef, where("uid", "==", userId));
+      const querySnapshot = await getDocs(q);
+      if (!querySnapshot.empty) {
+        const teacherDocRef = doc(db, "teachers", querySnapshot.docs[0].id);
+        await updateDoc(teacherDocRef, {
+          departmentId: departmentId || "",
+        });
+      }
+    } catch (err) {
+      console.error("Error updating teacher collection department:", err);
+    }
+
+    if (performingUser) {
+      await auditService.logAction({
+        action: 'SETTINGS_UPDATE',
+        targetId: userId,
+        targetType: 'user',
+        details: { departmentId },
         performedBy: performingUser
       });
     }
