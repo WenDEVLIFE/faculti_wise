@@ -14,7 +14,10 @@ import {
 import { appRoutes } from "@/lib/constants/routes.constants";
 
 const navigation = [
-  { name: "Faculty Schedule", href: appRoutes.studentDashboard, icon: Calendar },
+  { name: "My Class Schedule", href: appRoutes.studentSchedule, icon: LayoutDashboard },
+  { name: "Faculty Search", href: appRoutes.studentDashboard, icon: Calendar },
+  { name: "Department Schedule", href: appRoutes.studentDepartmentSchedule, icon: Building2 },
+  { name: "Settings", href: appRoutes.studentSettings, icon: User },
 ];
 
 export function StudentSidebar() {

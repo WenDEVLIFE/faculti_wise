@@ -37,14 +37,14 @@ The Administrator is responsible for managing institutional assets, course listi
 Teachers require features to declare availability, coordinate loads, and view real-time department schedules.
 
 ### 🔳 Availability & Preferences
-- [ ] **Preferred Hours Form**:
+- [x] **Preferred Hours Form**:
   - Interactive grid interface for teachers to submit their availability (Preferred, Available, Unavailable slots) for the upcoming term.
   - Auto-validation checks to ensure teachers declare at least the minimum required slots for their target unit load.
 
 ### 🔳 Academic Dashboards
-- [ ] **Department-Wide Calendar**:
+- [x] **Department-Wide Calendar**:
   - Interactive calendar displaying all schedules within their department to simplify substitute coverage and collaboration.
-- [ ] **Teaching Load Analysis**:
+- [x] **Teaching Load Analysis**:
   - Live statistics page highlighting their target hours vs. actual scheduled hours, tracking load balances.
 - [ ] **Timetable Calendar Export**:
   - Sync with Google Calendar, Outlook, or download as an `.ics` file.
@@ -56,7 +56,7 @@ Teachers require features to declare availability, coordinate loads, and view re
 Students need seamless schedule transparency, class tracking, and enrollment validation.
 
 ### 🔳 Enrollment & Section Timetables
-- [ ] **Personalized Class Schedule**:
+- [x] **Personalized Class Schedule**:
   - Dynamic calendar view showing their specific section's weekly timetables.
 - [ ] **Room & Class Updates**:
   - Live toast alerts and banner updates if a class is rescheduled, moved, or if there is a room change (e.g., to a different laboratory).

@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "@/lib/context/AuthContext";
 import { availabilityService, TeacherAvailability } from "@/features/availability/availability.service";
-import { EnhancedAvailabilityGrid } from "./components/EnhancedAvailabilityGrid";
+import { EnhancedAvailabilityGrid } from "./EnhancedAvailabilityGrid";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import {
