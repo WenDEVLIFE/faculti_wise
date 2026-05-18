@@ -58,7 +58,7 @@ Students need seamless schedule transparency, class tracking, and enrollment val
 ### 🔳 Enrollment & Section Timetables
 - [x] **Personalized Class Schedule**:
   - Dynamic calendar view showing their specific section's weekly timetables.
-- [ ] **Room & Class Updates**:
+- [x] **Room & Class Updates**:
   - Live toast alerts and banner updates if a class is rescheduled, moved, or if there is a room change (e.g., to a different laboratory).
 - [ ] **Credit/Unit Checklist**:
   - visual progress tracker mapping current units to degree program requirements.
