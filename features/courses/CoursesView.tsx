@@ -1,140 +1,170 @@
-import React from "react";
+"use client";
+
+import React, { useState, useEffect, useMemo } from "react";
 import { CourseGrid } from "./components/CourseGrid";
-import { Course } from "@/lib/types/course.types";
+import { Course, CourseCategory } from "@/lib/types/course.types";
 import { Button } from "@/components/ui/Button";
-import { Plus, Search, Filter } from "lucide-react";
+import { Plus, Search, Filter, Loader2, BookOpen, Layers, Award } from "lucide-react";
+import { useAuth } from "@/lib/context/AuthContext";
+import { coursesService } from "./courses.service";
+import { AddEditCourseModal } from "./components/AddEditCourseModal";
+import { cn } from "@/lib/utils";
 
-async function getCoursesData(): Promise<Course[]> {
-  "use cache";
-  return [
-    {
-      id: "1",
-      code: "CS101",
-      name: "Introduction to Computer Science",
-      description: "Fundamental concepts of programming, algorithms, and data structures using Python.",
-      units: 3,
-      lectureHours: 3,
-      labHours: 0,
-      category: "major",
-      department: "Computer Science",
-    },
-    {
-      id: "2",
-      code: "MATH202",
-      name: "Calculus II",
-      description: "Techniques of integration, infinite series, and polar coordinates.",
-      units: 4,
-      lectureHours: 4,
-      labHours: 0,
-      category: "major",
-      department: "Mathematics",
-    },
-    {
-      id: "3",
-      code: "CS205",
-      name: "Data Structures & Algorithms",
-      description: "Advanced data organization and algorithmic efficiency analysis.",
-      units: 3,
-      lectureHours: 2,
-      labHours: 3,
-      category: "major",
-      department: "Computer Science",
-    },
-    {
-      id: "4",
-      code: "ENG105",
-      name: "Academic Writing",
-      description: "Essential skills for professional and academic research writing.",
-      units: 3,
-      lectureHours: 3,
-      labHours: 0,
-      category: "general",
-      department: "English",
-    },
-    {
-      id: "5",
-      code: "PHYS101",
-      name: "General Physics I",
-      description: "Mechanics, heat, and sound with laboratory experiments.",
-      units: 4,
-      lectureHours: 3,
-      labHours: 3,
-      category: "general",
-      department: "Physics",
-    },
-    {
-      id: "6",
-      code: "ART110",
-      name: "Digital Arts",
-      description: "Introduction to digital media creation and graphic design principles.",
-      units: 3,
-      lectureHours: 1,
-      labHours: 4,
-      category: "elective",
-      department: "Arts & Media",
-    },
-    {
-      id: "7",
-      code: "IT301",
-      name: "Network Security",
-      description: "Principles of securing computer networks and data communication.",
-      units: 3,
-      lectureHours: 3,
-      labHours: 0,
-      category: "major",
-      department: "Information Technology",
-    },
-    {
-      id: "8",
-      code: "ECON201",
-      name: "Microeconomics",
-      description: "Analysis of individual markets and consumer behavior.",
-      units: 3,
-      lectureHours: 3,
-      labHours: 0,
-      category: "minor",
-      department: "Economics",
-    },
-  ];
-}
+export default function CoursesView() {
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [loading, setLoading] = useState(true);
 
-export default async function CoursesView() {
-  const courses = await getCoursesData();
+  // Filter States
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const [selectedDepartment, setSelectedDepartment] = useState<string>("all");
+
+  // Modal States
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [courseToEdit, setCourseToEdit] = useState<Course | null>(null);
+
+  const { profile } = useAuth();
+  const isAdmin = profile?.role === "admin";
+
+  useEffect(() => {
+    setLoading(true);
+    const unsubscribe = coursesService.subscribeCourses((data) => {
+      setCourses(data);
+      setLoading(false);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  // Compute unique departments dynamically
+  const departmentsList = useMemo(() => {
+    const depts = courses.map((c) => c.department).filter(Boolean);
+    return Array.from(new Set(depts)).sort();
+  }, [courses]);
+
+  // Handle Search and Filter logic
+  const filteredCourses = useMemo(() => {
+    return courses.filter((course) => {
+      const matchesSearch = 
+        course.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        course.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        course.description.toLowerCase().includes(searchQuery.toLowerCase());
+      
+      const matchesCategory = selectedCategory === "all" || course.category === selectedCategory;
+      const matchesDepartment = selectedDepartment === "all" || course.department === selectedDepartment;
+
+      return matchesSearch && matchesCategory && matchesDepartment;
+    });
+  }, [courses, searchQuery, selectedCategory, selectedDepartment]);
+
+  const handleAddCourse = () => {
+    setCourseToEdit(null);
+    setIsModalOpen(true);
+  };
+
+  const handleEditCourse = (course: Course) => {
+    setCourseToEdit(course);
+    setIsModalOpen(true);
+  };
+
+  const handleDeleteCourse = async (courseId: string) => {
+    if (window.confirm("Are you sure you want to delete this course? This action cannot be undone.")) {
+      try {
+        await coursesService.deleteCourse(courseId, profile || undefined);
+      } catch (error) {
+        console.error("Failed to delete course:", error);
+      }
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-40 space-y-4">
+        <Loader2 className="h-10 w-10 animate-spin text-primary" />
+        <p className="text-text-muted text-sm font-medium">Loading Course Catalog in real-time...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+      {/* Header section */}
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
           <h1 className="text-4xl font-bold tracking-tight text-text font-source-serif">Course Catalog</h1>
           <p className="text-text-muted mt-1">Browse and manage the full directory of institutional courses.</p>
         </div>
-        <div className="flex items-center gap-3">
-          <Button size="sm" className="gap-2 bg-primary hover:bg-primary-strong transition-all shadow-md">
-            <Plus className="h-4 w-4" /> Add Course
-          </Button>
+        {isAdmin && (
+          <div className="flex items-center gap-3">
+            <Button 
+              onClick={handleAddCourse}
+              className="gap-2 bg-primary hover:bg-primary-strong transition-all shadow-md h-12 px-6 rounded-2xl"
+            >
+              <Plus className="h-5 w-5" /> Add Course
+            </Button>
+          </div>
+        )}
+      </div>
+
+      {/* Filter and control bar */}
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between p-4 rounded-3xl bg-white/50 border border-border/50 shadow-sm backdrop-blur-md">
+        <div className="flex flex-wrap items-center gap-3 flex-1">
+          <div className="relative flex-1 min-w-[240px]">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-text-muted" />
+            <input 
+              type="text" 
+              placeholder="Search by name, code or description..." 
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10 pr-4 py-2.5 bg-white border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all w-full text-text"
+            />
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Filter className="h-4 w-4 text-text-muted shrink-0" />
+            <select
+              value={selectedCategory}
+              onChange={(e) => setSelectedCategory(e.target.value)}
+              className="pl-3 pr-8 py-2.5 bg-white border border-border rounded-xl text-sm text-text-muted outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary cursor-pointer appearance-none min-w-[150px]"
+            >
+              <option value="all">All Categories</option>
+              <option value="major">Major Course</option>
+              <option value="minor">Minor Course</option>
+              <option value="general">General Ed</option>
+              <option value="elective">Elective</option>
+            </select>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <select
+              value={selectedDepartment}
+              onChange={(e) => setSelectedDepartment(e.target.value)}
+              className="pl-3 pr-8 py-2.5 bg-white border border-border rounded-xl text-sm text-text-muted outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary cursor-pointer appearance-none min-w-[180px]"
+            >
+              <option value="all">All Departments</option>
+              {departmentsList.map((d) => (
+                <option key={d} value={d}>
+                  {d}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
       </div>
 
-      <div className="flex flex-col md:flex-row gap-4">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-text-muted" />
-          <input 
-            type="text" 
-            placeholder="Search by name, code or description..." 
-            className="w-full pl-10 pr-4 py-2.5 bg-white border border-border rounded-xl text-sm focus:outline-none focus:ring-4 focus:ring-primary/10 transition-all shadow-sm"
-          />
-        </div>
-        <div className="flex gap-2">
-          <Button variant="secondary" className="gap-2 border-border/50">
-            <Filter className="h-4 w-4" /> Category
-          </Button>
-          <Button variant="secondary" className="gap-2 border-border/50">
-            <Filter className="h-4 w-4" /> Department
-          </Button>
-        </div>
-      </div>
+      {/* Course Grid */}
+      <CourseGrid 
+        courses={filteredCourses} 
+        isAdmin={isAdmin}
+        onEdit={handleEditCourse}
+        onDelete={handleDeleteCourse}
+      />
 
-      <CourseGrid courses={courses} />
+      {/* Add / Edit Course Modal */}
+      <AddEditCourseModal 
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        courseToEdit={courseToEdit}
+      />
     </div>
   );
 }
