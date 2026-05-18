@@ -17,9 +17,9 @@ The Administrator is responsible for managing institutional assets, course listi
   - Implement academic terms manager (`2025-2026 1st Semester`, etc.) to partition data.
 
 ### 🔳 Course Catalog (In Progress - Option B Selected)
-- [ ] **Course Catalog Real-time Service**: Develop `courses.service.ts` to manage course additions, updates, and removals in Firestore.
-- [ ] **Interactive Add/Edit Course Modal**: A premium form to configure Course Code, Course Name, Units, Lecture/Lab Hours split, Category (Major/Minor/General/Elective), and Department assignment.
-- [ ] **Administrative Card Actions**: Add Edit/Delete hover triggers inside `CourseCard` components.
+- [x] **Course Catalog Real-time Service**: Develop `courses.service.ts` to manage course additions, updates, and removals in Firestore.
+- [x] **Interactive Add/Edit Course Modal**: A premium form to configure Course Code, Course Name, Units, Lecture/Lab Hours split, Category (Major/Minor/General/Elective), and Department assignment.
+- [x] **Administrative Card Actions**: Add Edit/Delete hover triggers inside `CourseCard` components.
 
 ### 🔳 Timetables & Optimization
 - [ ] **Interactive Schedule Grid**:
