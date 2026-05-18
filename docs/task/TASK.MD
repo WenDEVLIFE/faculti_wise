@@ -60,5 +60,5 @@ Students need seamless schedule transparency, class tracking, and enrollment val
   - Dynamic calendar view showing their specific section's weekly timetables.
 - [x] **Room & Class Updates**:
   - Live toast alerts and banner updates if a class is rescheduled, moved, or if there is a room change (e.g., to a different laboratory).
-- [ ] **Credit/Unit Checklist**:
+- [x] **Credit/Unit Checklist**:
   - visual progress tracker mapping current units to degree program requirements.

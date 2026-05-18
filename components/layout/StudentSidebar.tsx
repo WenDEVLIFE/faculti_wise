@@ -9,7 +9,8 @@ import {
   Calendar,
   Building2,
   User,
-  GraduationCap
+  GraduationCap,
+  ClipboardList
 } from "lucide-react";
 import { appRoutes } from "@/lib/constants/routes.constants";
 
@@ -17,6 +18,7 @@ const navigation = [
   { name: "My Class Schedule", href: appRoutes.studentSchedule, icon: LayoutDashboard },
   { name: "Faculty Search", href: appRoutes.studentDashboard, icon: Calendar },
   { name: "Department Schedule", href: appRoutes.studentDepartmentSchedule, icon: Building2 },
+  { name: "Credit Checklist", href: appRoutes.studentChecklist, icon: ClipboardList },
   { name: "Settings", href: appRoutes.studentSettings, icon: User },
 ];
 
