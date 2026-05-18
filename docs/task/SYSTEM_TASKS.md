@@ -24,7 +24,7 @@ This document tracks the core system and infrastructure tasks for Faculty_Wise.
 - [x] **Real-time Dashboard**: Admin overview with live stats on users, active runs, and system health.
 - [x] **Notification System**: In-app or email alerts for schedule updates and assignment changes.
 - [x] **Automated Backups**: Configure scheduled Firestore backups and data retention policies.
-- [ ] **Error Monitoring**: Integrate Sentry or Firebase Crashlytics for production error tracking.
+- [x] **Error Monitoring**: Integrate Sentry or Firebase Crashlytics for production error tracking.
 
 ## 5. UI/UX Refinement
 - [ ] **Global Search**: Unified search for users, courses, and schedules.

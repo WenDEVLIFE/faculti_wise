@@ -32,6 +32,7 @@ import { Badge } from "@/components/ui/Badge";
 import { useAdminDashboard } from "@/lib/hooks/useAdminDashboard";
 import { auditService } from "@/features/audit/audit.service";
 import { AuditLog } from "@/lib/types/firestore.types";
+import { ErrorTelemetryConsole } from "@/features/errors/components/ErrorTelemetryConsole";
 
 export default function AdminDashboard() {
   const { data, loading, error, triggerNewRun } = useAdminDashboard();
@@ -511,6 +512,8 @@ export default function AdminDashboard() {
               </CardContent>
             </Card>
           )}
+
+          <ErrorTelemetryConsole />
 
           {/* Real-time Streaming Activity Log */}
           <Card className="border border-border/80 shadow-sm bg-white overflow-hidden">
