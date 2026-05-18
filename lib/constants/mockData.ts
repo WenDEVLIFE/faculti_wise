@@ -11,6 +11,7 @@ export interface MockDataStore {
   rooms: any[];
   schedules: any[];
   auditLogs: any[];
+  terms?: any[];
 }
 
 export const mockData: MockDataStore = {
@@ -99,6 +100,8 @@ export const mockData: MockDataStore = {
       name: "BSCS-3A",
       yearLevel: 3,
       studentCount: 32,
+      advisorUid: "user-001",
+      targets: { minUnits: 12, maxUnits: 18 },
     },
     {
       id: "section-bsmath-2b",
@@ -106,6 +109,8 @@ export const mockData: MockDataStore = {
       name: "BSMATH-2B",
       yearLevel: 2,
       studentCount: 25,
+      advisorUid: "user-002",
+      targets: { minUnits: 12, maxUnits: 18 },
     },
   ],
   teachers: [
@@ -257,6 +262,35 @@ export const mockData: MockDataStore = {
       resourceId: "term-2026-s1",
       metadata: { versionId: "v3.1" },
       createdAt: new Date("2026-05-18T10:05:00Z"),
+    },
+  ],
+  terms: [
+    {
+      id: "term-2026-1st",
+      academicYear: "2025-2026",
+      semester: "1st",
+      startDate: new Date("2026-06-01"),
+      endDate: new Date("2026-10-30"),
+      isCurrent: true,
+      createdAt: new Date("2026-01-15"),
+    },
+    {
+      id: "term-2026-2nd",
+      academicYear: "2025-2026",
+      semester: "2nd",
+      startDate: new Date("2026-11-01"),
+      endDate: new Date("2027-03-31"),
+      isCurrent: false,
+      createdAt: new Date("2026-01-15"),
+    },
+    {
+      id: "term-2026-summer",
+      academicYear: "2025-2026",
+      semester: "Summer",
+      startDate: new Date("2027-04-15"),
+      endDate: new Date("2027-05-31"),
+      isCurrent: false,
+      createdAt: new Date("2026-01-15"),
     },
   ],
 };

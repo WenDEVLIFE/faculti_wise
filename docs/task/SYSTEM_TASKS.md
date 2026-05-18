@@ -9,9 +9,9 @@ This document tracks the core system and infrastructure tasks for Faculty_Wise.
 - [x] **Audit Logging System**: Create a centralized service to record sensitive operations (role changes, schedule publishing, data imports).
 
 ## 2. Institutional Data Management
-- [ ] **Department & Program Management**: CRUD interfaces for departments, programs, and academic terms.
+- [x] **Department & Program Management**: CRUD interfaces for departments, programs, and academic terms.
 - [x] **Course & Room Directory**: Management UI for courses (units, hours, category) and rooms (capacity, type, features).
-- [ ] **Section Management**: Tools to define class sections (BSCS-3A, etc.) and track student counts.
+- [x] **Section Management**: Tools to define class sections (BSCS-3A, etc.) and track student counts.
 - [ ] **CSV/JSON Data Import**: Build a robust import pipeline for bulk uploading faculty, course, and room data.
 
 ## 3. Academic Operations

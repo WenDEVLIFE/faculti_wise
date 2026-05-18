@@ -9,10 +9,10 @@ This document tracks all outstanding institutional, scheduling, and portal tasks
 The Administrator is responsible for managing institutional assets, course listings, department mappings, and launching optimization runs.
 
 ### 🔳 Institutional Assets & Infrastructure
-- [ ] **Department CRUD Management UI**:
+- [x] **Department CRUD Management UI**:
   - Build a settings interface to Add, Edit, and Delete departments.
   - Bind a department chair selector that loads users with the `teacher` role.
-- [ ] **Section & Academic Term Setup**:
+- [x] **Section & Academic Term Setup**:
   - Configure class sections (e.g., `BSCS-3A`) with targets, student enrollments, and advisor bounds.
   - Implement academic terms manager (`2025-2026 1st Semester`, etc.) to partition data.
 
