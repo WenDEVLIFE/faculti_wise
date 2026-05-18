@@ -1,13 +1,83 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
-import { Building2, Calendar, Globe, Bell } from "lucide-react";
+import { Building2, Calendar, Globe, Bell, Plus, AlertTriangle } from "lucide-react";
+import { Department } from "@/lib/types/department.types";
+import { User } from "@/lib/types/firestore.types";
+import { departmentsService } from "@/features/departments/departments.service";
+import { AddEditDepartmentModal } from "@/features/departments/components/AddEditDepartmentModal";
+import { DepartmentCard } from "@/features/departments/components/DepartmentCard";
+import { useAuth } from "@/lib/context/AuthContext";
 
 export function InstitutionSettings() {
+  const { profile } = useAuth();
+  const [departments, setDepartments] = useState<Department[]>([]);
+  const [teachers, setTeachers] = useState<Record<string, User>>({});
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [departmentToEdit, setDepartmentToEdit] = useState<Department | undefined>();
+  const [loading, setLoading] = useState(true);
+  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
+
+  useEffect(() => {
+    // Subscribe to departments
+    const unsubscribe = departmentsService.subscribeDepartments((data) => {
+      setDepartments(data);
+      setLoading(false);
+    });
+
+    // Load teachers
+    const loadTeachers = async () => {
+      try {
+        const teachersData = await departmentsService.getTeachers();
+        const teachersMap: Record<string, User> = {};
+        teachersData.forEach((teacher) => {
+          teachersMap[teacher.id] = teacher;
+        });
+        setTeachers(teachersMap);
+      } catch (err) {
+        console.error("Error loading teachers:", err);
+      }
+    };
+
+    loadTeachers();
+
+    return () => unsubscribe();
+  }, []);
+
+  const handleAddClick = () => {
+    setDepartmentToEdit(undefined);
+    setIsModalOpen(true);
+  };
+
+  const handleEditClick = (dept: Department) => {
+    setDepartmentToEdit(dept);
+    setIsModalOpen(true);
+  };
+
+  const handleDeleteClick = async (dept: Department) => {
+    setDeleting(true);
+    try {
+      await departmentsService.deleteDepartment(dept.id, profile);
+      setDeleteConfirm(null);
+    } catch (err) {
+      console.error("Error deleting department:", err);
+      alert("Failed to delete department");
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const handleModalClose = () => {
+    setIsModalOpen(false);
+    setDepartmentToEdit(undefined);
+  };
+
   return (
     <div className="space-y-6">
+      {/* Institution Details Card */}
       <Card className="border-border/50 shadow-sm overflow-hidden bg-white/80 backdrop-blur-sm">
         <CardHeader className="bg-surface-alt/30 border-b border-border/50">
           <CardTitle className="text-lg flex items-center gap-2">
@@ -73,6 +143,105 @@ export function InstitutionSettings() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Department Management Card */}
+      <Card className="border-border/50 shadow-sm overflow-hidden bg-white/80 backdrop-blur-sm">
+        <CardHeader className="bg-surface-alt/30 border-b border-border/50 flex items-center justify-between">
+          <CardTitle className="text-lg flex items-center gap-2">
+            <Building2 className="h-5 w-5 text-primary" />
+            Department Management
+          </CardTitle>
+          <Button
+            onClick={handleAddClick}
+            className="h-9 gap-2"
+          >
+            <Plus className="h-4 w-4" />
+            Add Department
+          </Button>
+        </CardHeader>
+
+        <CardContent className="pt-6">
+          {loading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {[1, 2, 3, 4].map((i) => (
+                <div
+                  key={i}
+                  className="h-48 rounded-2xl bg-surface-alt/50 animate-pulse"
+                />
+              ))}
+            </div>
+          ) : departments.length === 0 ? (
+            <div className="text-center py-12 px-4 rounded-xl bg-surface/50">
+              <Building2 className="h-12 w-12 text-text-muted/30 mx-auto mb-3" />
+              <p className="text-text-muted mb-4">No departments created yet</p>
+              <Button onClick={handleAddClick} variant="secondary">
+                Create First Department
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {departments.map((dept) => (
+                  <div key={dept.id} className="relative">
+                    {deleteConfirm === dept.id && (
+                      <div className="absolute inset-0 z-10 flex items-center justify-center rounded-2xl bg-black/50 backdrop-blur-sm">
+                        <div className="bg-white rounded-xl p-4 shadow-lg w-full mx-2">
+                          <div className="flex items-center gap-2 mb-4">
+                            <AlertTriangle className="h-5 w-5 text-red-600" />
+                            <h4 className="font-semibold text-text">Delete Department?</h4>
+                          </div>
+                          <p className="text-sm text-text-muted mb-4">
+                            This will permanently delete the department "{dept.name}". This action cannot be undone.
+                          </p>
+                          <div className="flex gap-2">
+                            <Button
+                              type="button"
+                              variant="secondary"
+                              className="flex-1 h-9"
+                              onClick={() => setDeleteConfirm(null)}
+                            >
+                              Cancel
+                            </Button>
+                            <Button
+                              type="button"
+                              className="flex-1 h-9 bg-red-600 hover:bg-red-700"
+                              disabled={deleting}
+                              onClick={() => handleDeleteClick(dept)}
+                            >
+                              {deleting ? "Deleting..." : "Delete"}
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    <DepartmentCard
+                      department={dept}
+                      chairName={
+                        dept.chairUid
+                          ? teachers[dept.chairUid]?.displayName
+                          : undefined
+                      }
+                      isAdmin={true}
+                      onEdit={handleEditClick}
+                      onDelete={(d) => setDeleteConfirm(d.id)}
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Modal */}
+      <AddEditDepartmentModal
+        isOpen={isModalOpen}
+        onClose={handleModalClose}
+        departmentToEdit={departmentToEdit}
+        onSuccess={() => {
+          // Departments will auto-update via subscription
+        }}
+      />
     </div>
   );
 }
