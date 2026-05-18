@@ -20,15 +20,24 @@ export interface Schedule {
   startTime: string;
   endTime: string;
   semester: string;
+  courseName?: string;
+  courseCode?: string;
+  room?: string;
+  building?: string;
+  isOnline?: boolean;
+  date?: any; // Firestore Timestamp or Date
 }
 
 // Course collection schema
 export interface Course {
   id: string;
   name: string;
+  code?: string;
   department: string;
   credits: number;
+  units?: number;
   capacity: number;
+  studentCount?: number;
 }
 
 // Room collection schema

@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
-import { auth, db } from "@/lib/firebase";
+import { getAuthInstance, getDb } from "@/lib/firebase";
 import { appRoutes } from "@/lib/constants/routes.constants";
 
 export default function RegisterPageView() {
@@ -21,6 +21,21 @@ export default function RegisterPageView() {
     setError(null);
     setLoading(true);
     try {
+      const auth = getAuthInstance();
+      const db = getDb();
+
+      if (!auth) {
+        setError("Authentication not initialized");
+        setLoading(false);
+        return;
+      }
+
+      if (!db) {
+        setError("Database not initialized");
+        setLoading(false);
+        return;
+      }
+
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 

@@ -8,7 +8,7 @@ import {
   getDocs,
   onSnapshot
 } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { getDb } from "@/lib/firebase";
 import { AuditLog, AuditAction, User } from "@/lib/types/firestore.types";
 
 export const auditService = {
@@ -25,6 +25,11 @@ export const auditService = {
     const { action, targetId, targetType, details, performedBy } = params;
 
     try {
+      const db = getDb();
+      if (!db) {
+        throw new Error("Firestore not initialized");
+      }
+
       const auditLogRef = collection(db, "audit_logs");
       
       await addDoc(auditLogRef, {
@@ -51,6 +56,11 @@ export const auditService = {
    * Fetches recent audit logs
    */
   async fetchLogs(maxCount: number = 100): Promise<AuditLog[]> {
+    const db = getDb();
+    if (!db) {
+      throw new Error("Firestore not initialized");
+    }
+
     const logsRef = collection(db, "audit_logs");
     const q = query(logsRef, orderBy("timestamp", "desc"), limit(maxCount));
     const querySnapshot = await getDocs(q);
@@ -65,6 +75,11 @@ export const auditService = {
    * Subscribes to real-time audit log updates
    */
   subscribeToLogs(onUpdate: (logs: AuditLog[]) => void, maxCount: number = 50): () => void {
+    const db = getDb();
+    if (!db) {
+      throw new Error("Firestore not initialized");
+    }
+
     const logsRef = collection(db, "audit_logs");
     const q = query(logsRef, orderBy("timestamp", "desc"), limit(maxCount));
     

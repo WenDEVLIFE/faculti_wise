@@ -19,7 +19,7 @@ import {
   onSnapshot
 } from "firebase/firestore";
 import { initializeApp, getApp, getApps } from "firebase/app";
-import { db } from "@/lib/firebase";
+import { getDb } from "@/lib/firebase";
 import { User } from "@/lib/types/firestore.types";
 import { auditService } from "../audit/audit.service";
 
@@ -42,6 +42,10 @@ const getSecondaryAuth = () => {
 
 export const userManagementService = {
   async fetchUsers(): Promise<User[]> {
+    const db = getDb();
+    if (!db) {
+      throw new Error("Firestore not initialized");
+    }
     const usersRef = collection(db, "users");
     const q = query(usersRef, orderBy("createdAt", "desc"));
     const querySnapshot = await getDocs(q);
@@ -58,6 +62,10 @@ export const userManagementService = {
   },
 
   subscribeUsers(onUpdate: (users: User[]) => void): () => void {
+    const db = getDb();
+    if (!db) {
+      throw new Error("Firestore not initialized");
+    }
     const usersRef = collection(db, "users");
     const q = query(usersRef, orderBy("createdAt", "desc"));
     
@@ -118,6 +126,10 @@ export const userManagementService = {
         updatedAt: serverTimestamp(),
       };
 
+      const db = getDb();
+      if (!db) {
+        throw new Error("Firestore not initialized");
+      }
       await setDoc(doc(db, "users", fbUser.uid), newUser);
 
       // 5. Sign out from secondary auth
@@ -150,6 +162,10 @@ export const userManagementService = {
     // Note: This only deletes from Firestore. 
     // Deleting from Auth requires Admin SDK or the user being logged in.
     // For now, we'll mark as inactive or delete from Firestore.
+    const db = getDb();
+    if (!db) {
+      throw new Error("Firestore not initialized");
+    }
     await deleteDoc(doc(db, "users", userId));
 
     if (performingUser) {
@@ -164,6 +180,10 @@ export const userManagementService = {
   },
 
   async updateUserStatus(userId: string, status: 'active' | 'inactive', performingUser?: User): Promise<void> {
+    const db = getDb();
+    if (!db) {
+      throw new Error("Firestore not initialized");
+    }
     await updateDoc(doc(db, "users", userId), {
       status,
       updatedAt: serverTimestamp(),
@@ -181,6 +201,10 @@ export const userManagementService = {
   },
 
   async updateUserRole(userId: string, role: 'admin' | 'teacher' | 'student', performingUser?: User): Promise<void> {
+    const db = getDb();
+    if (!db) {
+      throw new Error("Firestore not initialized");
+    }
     await updateDoc(doc(db, "users", userId), {
       role,
       updatedAt: serverTimestamp(),

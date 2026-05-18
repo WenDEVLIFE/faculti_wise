@@ -1,3 +1,7 @@
+---
+title: Faculty_Wise Firebase Implementation
+---
+
 ## Name: Faculty_Wise Firebase Implementation
 
 ## Objective
