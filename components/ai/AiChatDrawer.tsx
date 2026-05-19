@@ -185,7 +185,7 @@ Instruction: Answer the User Question in a highly professional, helpful manner. 
 
       {/* Floating Chat Drawer Container */}
       <div
-        className={`fixed bottom-24 right-6 z-50 flex h-[580px] w-96 max-w-[calc(100vw-2rem)] flex-col rounded-[2rem] border border-white/70 bg-white/90 p-5 shadow-[0_20px_50px_rgba(40,30,15,0.2)] backdrop-blur-xl transition-all duration-500 transform ${
+        className={`fixed bottom-20 sm:bottom-24 right-4 sm:right-6 z-50 flex h-[50vh] sm:h-[500px] md:h-[580px] w-[calc(100vw-2rem)] sm:w-96 max-w-[calc(100vw-2rem)] max-h-[calc(100vh-120px)] flex-col rounded-[2rem] border border-white/70 bg-white/90 p-4 sm:p-5 shadow-[0_20px_50px_rgba(40,30,15,0.2)] backdrop-blur-xl transition-all duration-500 transform ${
           isOpen ? "translate-y-0 opacity-100 scale-100" : "translate-y-10 opacity-0 scale-95 pointer-events-none"
         }`}
       >
