@@ -174,7 +174,7 @@ export function OperationsDashboardView() {
 
         {/* 4 Core KPIs driven by useAdminDashboard */}
         {data && (
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-3 sm:gap-4 md:gap-6 md:grid-cols-2 lg:grid-cols-4">
             <StatTile
               title="Schedule Conflicts"
               value={data.scheduleConflictsCount}
@@ -212,10 +212,10 @@ export function OperationsDashboardView() {
       </div>
 
       {/* Main Grid Panel */}
-      <div className="grid gap-6 lg:grid-cols-7">
+      <div className="grid gap-3 sm:gap-4 md:gap-6 lg:grid-cols-7">
         
         {/* Left Side: Optimization Runs & User Base Breakdown (4 Columns) */}
-        <div className="lg:col-span-4 space-y-6">
+        <div className="lg:col-span-4 space-y-3 sm:space-y-4 md:space-y-6">
           
           {/* Active & Historical Runs Overview */}
           <Card className="border border-border/80 shadow-sm bg-white overflow-hidden">
@@ -239,7 +239,7 @@ export function OperationsDashboardView() {
                   <p className="text-xs text-text-muted mt-1">Click "New Schedule Run" at the top to start</p>
                 </div>
               ) : (
-                <div className="space-y-6">
+                <div className="space-y-3 sm:space-y-4 md:space-y-6">
                   {data?.activeRuns.map((run) => {
                     const isActive = run.status === 'running' || run.status === 'pending';
                     return (
@@ -333,7 +333,7 @@ export function OperationsDashboardView() {
                 <p className="text-xs text-text-muted mt-1">Live snapshot of verified accounts and access categories</p>
               </CardHeader>
               <CardContent className="pt-6 font-manrope">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 md:gap-6">
                   
                   {/* Left Column: Role counts and ratio bar */}
                   <div className="space-y-4">
@@ -411,7 +411,7 @@ export function OperationsDashboardView() {
         </div>
 
         {/* Right Side: System Health & Activity Feed (3 Columns) */}
-        <div className="lg:col-span-3 space-y-6">
+        <div className="lg:col-span-3 space-y-3 sm:space-y-4 md:space-y-6">
           
           {/* Real-time System Health Telemetry */}
           {data && (
