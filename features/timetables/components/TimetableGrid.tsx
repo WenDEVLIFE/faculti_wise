@@ -39,23 +39,23 @@ export function TimetableGrid({
 
   return (
     <div className="relative overflow-x-auto rounded-xl border border-border bg-surface shadow-sm">
-      <div className="min-w-[800px]">
+      <div className="min-w-full md:min-w-[800px]">
         {/* Header */}
-        <div className="grid grid-cols-[80px_repeat(6,1fr)] border-b border-border bg-surface-alt/50 sticky top-0 z-20 backdrop-blur-sm">
-          <div className="p-3"></div>
+        <div className="grid grid-cols-[60px_repeat(6,1fr)] md:grid-cols-[80px_repeat(6,1fr)] border-b border-border bg-surface-alt/50 sticky top-0 z-20 backdrop-blur-sm">
+          <div className="p-2 md:p-3"></div>
           {days.map((day) => (
-            <div key={day} className="p-3 text-center text-sm font-semibold text-text border-l border-border first:border-l-0">
-              {day}
+            <div key={day} className="p-2 md:p-3 text-center text-xs md:text-sm font-semibold text-text border-l border-border first:border-l-0">
+              {day.slice(0, 3)}
             </div>
           ))}
         </div>
 
         {/* Body */}
-        <div className="relative grid grid-cols-[80px_repeat(6,1fr)]">
+        <div className="relative grid grid-cols-[60px_repeat(6,1fr)] md:grid-cols-[80px_repeat(6,1fr)]">
           {/* Time Labels */}
           <div className="bg-surface-alt/20">
             {hours.map((hour) => (
-              <div key={hour} className="h-16 border-b border-border/50 text-right pr-4 text-[10px] font-medium text-text-muted flex items-start pt-2">
+              <div key={hour} className="h-12 md:h-16 border-b border-border/50 text-right pr-2 md:pr-4 text-[8px] md:text-[10px] font-medium text-text-muted flex items-start pt-1 md:pt-2">
                 {hour.toString().padStart(2, "0")}:00
               </div>
             ))}
@@ -65,7 +65,7 @@ export function TimetableGrid({
           {days.map((day) => (
             <div key={day} className="relative border-l border-border/50 bg-white/50">
               {hours.map((hour) => (
-                <div key={hour} className="h-16 border-b border-border/50" />
+                <div key={hour} className="h-12 md:h-16 border-b border-border/50" />
               ))}
               
               {/* Entries for this day */}
