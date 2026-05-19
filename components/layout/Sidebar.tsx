@@ -1,8 +1,7 @@
 "use client";
 
 import * as React from "react";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { Link, useSearchParams } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import {
   LayoutDashboard,
@@ -13,24 +12,35 @@ import {
   Settings,
   Menu,
   GraduationCap,
-  History as HistoryIcon
+  History as HistoryIcon,
+  ListChecks,
+  School,
+  X
 } from "lucide-react";
 import { useAuth } from "@/lib/context/AuthContext";
 
 const navigation = [
-  { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { name: "Timetables", href: "/timetables", icon: CalendarDays },
-  { name: "Faculty Load", href: "/faculty-load", icon: Users },
-  { name: "Courses", href: "/courses", icon: BookOpen },
-  { name: "Rooms & Labs", href: "/rooms", icon: Building2 },
-  { name: "Users", href: "/users", icon: Users },
-  { name: "Audit Logs", href: "/audit", icon: HistoryIcon },
-  { name: "Settings", href: "/settings", icon: Settings },
+  { name: "Dashboard", tab: "dashboard", href: "/dashboard", icon: LayoutDashboard },
+  { name: "Timetables", tab: "timetables", href: "/dashboard?tab=timetables", icon: CalendarDays },
+  { name: "Faculty Load", tab: "faculty-load", href: "/dashboard?tab=faculty-load", icon: Users },
+  { name: "Courses", tab: "courses", href: "/dashboard?tab=courses", icon: BookOpen },
+  { name: "Course Offerings", tab: "offerings", href: "/dashboard?tab=offerings", icon: ListChecks },
+  { name: "Departments", tab: "departments", href: "/dashboard?tab=departments", icon: Building2 },
+  { name: "Rooms & Labs", tab: "rooms", href: "/dashboard?tab=rooms", icon: School },
+  { name: "Users", tab: "users", href: "/dashboard?tab=users", icon: Users },
+  { name: "Audit Logs", tab: "audit", href: "/dashboard?tab=audit", icon: HistoryIcon },
+  { name: "Settings", tab: "settings", href: "/dashboard?tab=settings", icon: Settings },
 ];
 
-export function Sidebar() {
+interface SidebarProps {
+  open?: boolean;
+  onClose?: () => void;
+}
+
+export function Sidebar({ open = false, onClose }: SidebarProps) {
   const { profile } = useAuth();
-  const pathname = usePathname();
+  const [searchParams] = useSearchParams();
+  const activeTab = searchParams.get("tab") || "dashboard";
 
   // Get initials for the avatar placeholder
   const initials = profile?.displayName
@@ -38,25 +48,35 @@ export function Sidebar() {
     : "FW";
 
   return (
-    <div className="flex h-full w-64 flex-col border-r border-border bg-surface">
-      <div className="flex h-16 items-center border-b border-border px-6">
-        <Link href="/dashboard" className="flex items-center gap-2">
+    <div className={cn(
+      "fixed inset-y-0 left-0 z-50 flex h-full w-64 flex-col border-r border-border bg-surface md:relative md:z-auto md:translate-x-0 transition-transform duration-300 ease-in-out",
+      open ? "translate-x-0" : "-translate-x-full"
+    )}>
+      <div className="flex h-16 items-center justify-between border-b border-border px-6">
+        <Link to="/dashboard" className="flex items-center gap-2 flex-1">
           <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-white">
             <GraduationCap className="h-5 w-5" />
           </div>
-          <span className="text-xl font-bold font-source-serif text-text tracking-tight">
+          <span className="text-xl font-bold font-source-serif text-text tracking-tight hidden sm:inline">
             Faculty_Wise
           </span>
         </Link>
+        <button
+          onClick={onClose}
+          className="md:hidden p-1 hover:bg-surface-alt rounded-md transition-colors text-text-muted hover:text-text"
+          aria-label="Close sidebar"
+        >
+          <X className="h-5 w-5" />
+        </button>
       </div>
       <div className="flex flex-1 flex-col overflow-y-auto px-4 py-6">
         <nav className="flex flex-1 flex-col gap-1">
           {navigation.map((item) => {
-            const isActive = pathname === item.href;
+            const isActive = activeTab === item.tab;
             return (
               <Link
                 key={item.name}
-                href={item.href}
+                to={item.href}
                 className={cn(
                   "group flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
                   isActive

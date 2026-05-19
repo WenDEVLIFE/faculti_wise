@@ -139,7 +139,7 @@ export function AddEditRoomModal({ isOpen, onClose, roomToEdit }: AddEditRoomMod
               </div>
             )}
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <label className="text-sm font-medium text-text-muted px-1">Room Name / No.</label>
                 <input
@@ -165,7 +165,7 @@ export function AddEditRoomModal({ isOpen, onClose, roomToEdit }: AddEditRoomMod
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <label className="text-sm font-medium text-text-muted px-1">Floor Level</label>
                 <input
@@ -191,7 +191,7 @@ export function AddEditRoomModal({ isOpen, onClose, roomToEdit }: AddEditRoomMod
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <label className="text-sm font-medium text-text-muted px-1">Room Type</label>
                 <select

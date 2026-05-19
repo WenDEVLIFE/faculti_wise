@@ -173,7 +173,7 @@ export function AddEditCourseModal({ isOpen, onClose, courseToEdit }: AddEditCou
               </div>
             )}
 
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="space-y-2 col-span-1">
                 <label className="text-sm font-medium text-text-muted px-1">Code</label>
                 <input
@@ -186,7 +186,7 @@ export function AddEditCourseModal({ isOpen, onClose, courseToEdit }: AddEditCou
                 />
               </div>
 
-              <div className="space-y-2 col-span-2">
+              <div className="space-y-2 col-span-1 sm:col-span-2">
                 <label className="text-sm font-medium text-text-muted px-1">Course Name</label>
                 <input
                   type="text"
@@ -210,7 +210,7 @@ export function AddEditCourseModal({ isOpen, onClose, courseToEdit }: AddEditCou
               />
             </div>
 
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="space-y-2">
                 <label className="text-sm font-medium text-text-muted px-1">Total Units</label>
                 <input

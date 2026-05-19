@@ -1,4 +1,5 @@
 import React from "react";
+import { useSearchParams } from "react-router-dom";
 import { TimetableGrid } from "@/features/timetables/components/TimetableGrid";
 import { FacultySearch } from "./components/FacultySearch";
 import { TimetableEntry } from "@/lib/types/timetable.types";
@@ -6,69 +7,55 @@ import { Card, CardContent } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Calendar, User, Info } from "lucide-react";
 
-async function getDepartments() {
-  "use cache";
-  return [
-    { id: "1", name: "Computer Science" },
-    { id: "2", name: "Information Technology" },
-    { id: "3", name: "Engineering" },
-    { id: "4", name: "Mathematics" },
-  ];
-}
+const DEPARTMENTS = [
+  { id: "1", name: "Computer Science" },
+  { id: "2", name: "Information Technology" },
+  { id: "3", name: "Engineering" },
+  { id: "4", name: "Mathematics" },
+];
 
-async function getFacultySchedule(instructorName?: string, departmentId?: string): Promise<TimetableEntry[]> {
-  "use cache";
-  // In a real app, this would fetch from a database based on filters
-  return [
-    {
-      id: "1",
-      courseCode: "CS101",
-      courseName: "Introduction to Computer Science",
-      teacherName: "Dr. Smith",
-      room: "RM-201",
-      day: "Monday",
-      startTime: "09:00",
-      endTime: "10:30",
-      type: "lecture",
-    },
-    {
-      id: "2",
-      courseCode: "CS102",
-      courseName: "Data Structures",
-      teacherName: "Dr. Smith",
-      room: "LAB-102",
-      day: "Wednesday",
-      startTime: "13:00",
-      endTime: "15:00",
-      type: "lab",
-    },
-    {
-      id: "3",
-      courseCode: "CS201",
-      courseName: "Algorithms",
-      teacherName: "Dr. Smith",
-      room: "RM-305",
-      day: "Friday",
-      startTime: "10:00",
-      endTime: "12:00",
-      type: "lecture",
-    },
-  ];
-}
+const SCHEDULES: TimetableEntry[] = [
+  {
+    id: "1",
+    courseCode: "CS101",
+    courseName: "Introduction to Computer Science",
+    teacherName: "Dr. Smith",
+    room: "RM-201",
+    day: "Monday",
+    startTime: "09:00",
+    endTime: "10:30",
+    type: "lecture",
+  },
+  {
+    id: "2",
+    courseCode: "CS102",
+    courseName: "Data Structures",
+    teacherName: "Dr. Smith",
+    room: "LAB-102",
+    day: "Wednesday",
+    startTime: "13:00",
+    endTime: "15:00",
+    type: "lab",
+  },
+  {
+    id: "3",
+    courseCode: "CS201",
+    courseName: "Algorithms",
+    teacherName: "Dr. Smith",
+    room: "RM-305",
+    day: "Friday",
+    startTime: "10:00",
+    endTime: "12:00",
+    type: "lecture",
+  },
+];
 
-export default async function FacultyScheduleView({ 
-  searchParams 
-}: { 
-  searchParams: Promise<{ [key: string]: string | string[] | undefined }> 
-}) {
-  const params = await searchParams;
-  const instructor = (params.instructor as string) || "Dr. Smith";
-  const deptId = (params.dept as string) || "1";
+export function FacultyScheduleView() {
+  const [searchParams] = useSearchParams();
+  const instructor = searchParams.get("instructor") || "Dr. Smith";
+  const deptId = searchParams.get("dept") || "1";
   
-  const departments = await getDepartments();
-  const entries = await getFacultySchedule(instructor, deptId);
-  
-  const currentDept = departments.find(d => d.id === deptId)?.name || "Department of Computer Science";
+  const currentDept = DEPARTMENTS.find(d => d.id === deptId)?.name || "Department of Computer Science";
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -89,7 +76,7 @@ export default async function FacultyScheduleView({
         </div>
       </div>
 
-      <FacultySearch departments={departments} />
+      <FacultySearch departments={DEPARTMENTS} />
 
       <div className="grid gap-8">
         <div className="flex items-center gap-4 px-2">
@@ -104,7 +91,7 @@ export default async function FacultyScheduleView({
 
         <Card className="border-none shadow-2xl overflow-hidden bg-white/40 backdrop-blur-xl ring-1 ring-white/20">
           <CardContent className="p-0">
-            <TimetableGrid entries={entries} />
+            <TimetableGrid entries={SCHEDULES} />
           </CardContent>
         </Card>
       </div>
@@ -123,3 +110,5 @@ export default async function FacultyScheduleView({
     </div>
   );
 }
+
+export default FacultyScheduleView;

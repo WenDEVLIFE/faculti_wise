@@ -6,70 +6,65 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Filter, Download, Plus } from "lucide-react";
 
-async function getFacultyLoadData(): Promise<FacultyMember[]> {
-  "use cache";
-  return [
-    {
-      id: "1",
-      name: "Dr. Sarah Miller",
-      department: "Computer Science",
-      designation: "Professor",
-      totalUnits: 21,
-      targetUnits: 18,
-      status: "overloaded",
-      assignments: [],
-    },
-    {
-      id: "2",
-      name: "Prof. Robert Chen",
-      department: "Information Technology",
-      designation: "Associate Professor",
-      totalUnits: 18,
-      targetUnits: 18,
-      status: "normal",
-      assignments: [],
-    },
-    {
-      id: "3",
-      name: "Ms. Elena Rodriguez",
-      department: "Computer Science",
-      designation: "Assistant Professor",
-      totalUnits: 12,
-      targetUnits: 18,
-      status: "underloaded",
-      assignments: [],
-    },
-    {
-      id: "4",
-      name: "Dr. James Wilson",
-      department: "Data Science",
-      designation: "Professor",
-      totalUnits: 18,
-      targetUnits: 18,
-      status: "normal",
-      assignments: [],
-    },
-    {
-      id: "5",
-      name: "Prof. Lisa Thompson",
-      department: "Computer Science",
-      designation: "Associate Professor",
-      totalUnits: 24,
-      targetUnits: 18,
-      status: "overloaded",
-      assignments: [],
-    },
-  ];
-}
+const DATA: FacultyMember[] = [
+  {
+    id: "1",
+    name: "Dr. Sarah Miller",
+    department: "Computer Science",
+    designation: "Professor",
+    totalUnits: 21,
+    targetUnits: 18,
+    status: "overloaded",
+    assignments: [],
+  },
+  {
+    id: "2",
+    name: "Prof. Robert Chen",
+    department: "Information Technology",
+    designation: "Associate Professor",
+    totalUnits: 18,
+    targetUnits: 18,
+    status: "normal",
+    assignments: [],
+  },
+  {
+    id: "3",
+    name: "Ms. Elena Rodriguez",
+    department: "Computer Science",
+    designation: "Assistant Professor",
+    totalUnits: 12,
+    targetUnits: 18,
+    status: "underloaded",
+    assignments: [],
+  },
+  {
+    id: "4",
+    name: "Dr. James Wilson",
+    department: "Data Science",
+    designation: "Professor",
+    totalUnits: 18,
+    targetUnits: 18,
+    status: "normal",
+    assignments: [],
+  },
+  {
+    id: "5",
+    name: "Prof. Lisa Thompson",
+    department: "Computer Science",
+    designation: "Associate Professor",
+    totalUnits: 24,
+    targetUnits: 18,
+    status: "overloaded",
+    assignments: [],
+  },
+];
 
-export default async function FacultyLoadView() {
-  const faculty = await getFacultyLoadData();
-
+export function FacultyLoadView() {
   const stats = {
-    totalFaculty: faculty.length,
-    totalUnits: faculty.reduce((acc, curr) => acc + curr.totalUnits, 0),
-    overloadedCount: faculty.filter(f => f.status === "overloaded").length,
-    underloadedCount: faculty.filter(f => f.status === "underloaded").length,
+    totalFaculty: DATA.length,
+    totalUnits: DATA.reduce((acc, curr) => acc + curr.totalUnits, 0),
+    overloadedCount: DATA.filter(f => f.status === "overloaded").length,
+    underloadedCount: DATA.filter(f => f.status === "underloaded").length,
   };
 
   return (
@@ -108,9 +103,11 @@ export default async function FacultyLoadView() {
           </div>
         </CardHeader>
         <CardContent className="p-0">
-          <FacultyLoadTable faculty={faculty} />
+          <FacultyLoadTable faculty={DATA} />
         </CardContent>
       </Card>
     </div>
   );
 }
+
+export default FacultyLoadView;

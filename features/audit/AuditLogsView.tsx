@@ -86,66 +86,66 @@ export default function AuditLogsView() {
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="border-b border-border bg-surface-alt/50">
-                  <th className="px-8 py-4 text-xs font-semibold uppercase tracking-wider text-text-muted">Timestamp</th>
-                  <th className="px-8 py-4 text-xs font-semibold uppercase tracking-wider text-text-muted">Action</th>
-                  <th className="px-8 py-4 text-xs font-semibold uppercase tracking-wider text-text-muted">User</th>
-                  <th className="px-8 py-4 text-xs font-semibold uppercase tracking-wider text-text-muted">Details</th>
-                  <th className="px-8 py-4 text-right text-xs font-semibold uppercase tracking-wider text-text-muted">Target</th>
+                  <th className="px-3 sm:px-4 md:px-6 lg:px-8 py-2 sm:py-3 md:py-4 text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-text-muted">Timestamp</th>
+                  <th className="px-3 sm:px-4 md:px-6 lg:px-8 py-2 sm:py-3 md:py-4 text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-text-muted">Action</th>
+                  <th className="hidden sm:table-cell px-3 sm:px-4 md:px-6 lg:px-8 py-2 sm:py-3 md:py-4 text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-text-muted">User</th>
+                  <th className="hidden md:table-cell px-3 sm:px-4 md:px-6 lg:px-8 py-2 sm:py-3 md:py-4 text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-text-muted">Details</th>
+                  <th className="px-3 sm:px-4 md:px-6 lg:px-8 py-2 sm:py-3 md:py-4 text-right text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-text-muted">Target</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
                 {loading ? (
                   Array.from({ length: 5 }).map((_, i) => (
                     <tr key={i} className="animate-pulse">
-                      <td colSpan={5} className="px-8 py-6 h-20 bg-surface/30" />
+                      <td colSpan={5} className="px-3 sm:px-4 md:px-6 lg:px-8 py-4 md:py-6 h-16 md:h-20 bg-surface/30" />
                     </tr>
                   ))
                 ) : filteredLogs.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="px-8 py-20 text-center text-text-muted">
+                    <td colSpan={5} className="px-3 sm:px-4 md:px-6 lg:px-8 py-12 md:py-20 text-center text-sm md:text-base text-text-muted">
                       No audit logs found.
                     </td>
                   </tr>
                 ) : (
                   filteredLogs.map((log) => (
                     <tr key={log.id} className="group hover:bg-surface-alt/30 transition-colors">
-                      <td className="px-8 py-4">
+                      <td className="px-3 sm:px-4 md:px-6 lg:px-8 py-2 sm:py-3 md:py-4">
                         <div className="flex flex-col">
-                          <span className="text-sm font-medium text-text">
+                          <span className="text-xs sm:text-sm font-medium text-text">
                             {log.timestamp?.toDate ? log.timestamp.toDate().toLocaleDateString() : 'Today'}
                           </span>
-                          <span className="text-xs text-text-muted">
+                          <span className="text-[9px] sm:text-xs text-text-muted">
                             {log.timestamp?.toDate ? log.timestamp.toDate().toLocaleTimeString() : 'Just now'}
                           </span>
                         </div>
                       </td>
-                      <td className="px-8 py-4">
+                      <td className="px-3 sm:px-4 md:px-6 lg:px-8 py-2 sm:py-3 md:py-4">
                         <ActionBadge action={log.action} />
                       </td>
-                      <td className="px-8 py-4">
-                        <div className="flex items-center gap-3">
-                          <div className="h-8 w-8 rounded-lg bg-surface flex items-center justify-center text-primary border border-border">
+                      <td className="hidden sm:table-cell px-3 sm:px-4 md:px-6 lg:px-8 py-2 sm:py-3 md:py-4">
+                        <div className="flex items-center gap-2 md:gap-3">
+                          <div className="h-8 w-8 rounded-lg bg-surface flex items-center justify-center text-primary border border-border flex-shrink-0">
                             <UserIcon className="h-4 w-4" />
                           </div>
-                          <div className="flex flex-col">
-                            <span className="text-sm font-semibold text-text">{log.userName}</span>
-                            <span className="text-[10px] text-text-muted lowercase">{log.userEmail}</span>
+                          <div className="flex flex-col min-w-0">
+                            <span className="text-xs sm:text-sm font-semibold text-text truncate">{log.userName}</span>
+                            <span className="text-[9px] sm:text-[10px] text-text-muted lowercase truncate">{log.userEmail}</span>
                           </div>
                         </div>
                       </td>
-                      <td className="px-8 py-4">
-                        <div className="flex items-center gap-2 text-xs text-text-muted bg-surface/50 rounded-lg px-3 py-1.5 border border-border/50 max-w-xs truncate">
+                      <td className="hidden md:table-cell px-3 sm:px-4 md:px-6 lg:px-8 py-2 sm:py-3 md:py-4">
+                        <div className="flex items-center gap-2 text-[9px] md:text-xs text-text-muted bg-surface/50 rounded-lg px-3 py-1.5 border border-border/50 max-w-xs truncate">
                           <Info className="h-3 w-3 shrink-0" />
                           {Object.entries(log.details || {}).map(([key, val]) => (
-                            <span key={key}>{key}: {String(val)}</span>
+                            <span key={key} className="truncate">{key}: {String(val)}</span>
                           ))}
                         </div>
                       </td>
-                      <td className="px-8 py-4 text-right">
-                        <div className="flex items-center justify-end gap-1 text-xs font-mono text-text-muted">
-                          <span className="bg-surface px-2 py-1 rounded border border-border">{log.targetType}</span>
-                          <ChevronRight className="h-3 w-3" />
-                          <span className="bg-surface px-2 py-1 rounded border border-border truncate max-w-[100px]">{log.targetId}</span>
+                      <td className="px-3 sm:px-4 md:px-6 lg:px-8 py-2 sm:py-3 md:py-4 text-right">
+                        <div className="flex items-center justify-end gap-1 text-[9px] sm:text-xs font-mono text-text-muted flex-wrap">
+                          <span className="bg-surface px-2 py-1 rounded border border-border text-[8px] sm:text-[9px]">{log.targetType}</span>
+                          <ChevronRight className="h-3 w-3 hidden sm:inline" />
+                          <span className="bg-surface px-2 py-1 rounded border border-border truncate max-w-[60px] sm:max-w-[100px] text-[8px] sm:text-[9px]">{log.targetId}</span>
                         </div>
                       </td>
                     </tr>

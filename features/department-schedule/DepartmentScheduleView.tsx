@@ -6,55 +6,48 @@ import { Card, CardContent } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Calendar } from "lucide-react";
 
-async function getMockFilters() {
-  "use cache";
-  return {
-    departments: [
-      { id: "1", name: "Computer Science", code: "CS" },
-      { id: "2", name: "Information Technology", code: "IT" },
-    ],
-    programs: [
-      { id: "1", name: "BS Computer Science", code: "BSCS", departmentId: "1" },
-      { id: "2", name: "BS Information Technology", code: "BSIT", departmentId: "2" },
-    ],
-    sections: [
-      { id: "1", name: "BSCS-1A", yearLevel: 1, programId: "1" },
-      { id: "2", name: "BSCS-1B", yearLevel: 1, programId: "1" },
-    ],
-  };
-}
+const FILTERS = {
+  departments: [
+    { id: "1", name: "Computer Science", code: "CS" },
+    { id: "2", name: "Information Technology", code: "IT" },
+  ],
+  programs: [
+    { id: "1", name: "BS Computer Science", code: "BSCS", departmentId: "1" },
+    { id: "2", name: "BS Information Technology", code: "BSIT", departmentId: "2" },
+  ],
+  sections: [
+    { id: "1", name: "BSCS-1A", yearLevel: 1, programId: "1" },
+    { id: "2", name: "BSCS-1B", yearLevel: 1, programId: "1" },
+  ],
+};
 
-async function getFilteredSchedule(): Promise<TimetableEntry[]> {
-  "use cache";
-  return [
-    {
-      id: "1",
-      courseCode: "CS101",
-      courseName: "Introduction to Computer Science",
-      teacherName: "Dr. Smith",
-      room: "RM-201",
-      day: "Monday",
-      startTime: "09:00",
-      endTime: "10:30",
-      type: "lecture",
-    },
-    {
-      id: "2",
-      courseCode: "MATH202",
-      courseName: "Calculus II",
-      teacherName: "Prof. Johnson",
-      room: "LAB-102",
-      day: "Monday",
-      startTime: "11:00",
-      endTime: "13:00",
-      type: "lab",
-    },
-  ];
-}
+const SCHEDULES: TimetableEntry[] = [
+  {
+    id: "1",
+    courseCode: "CS101",
+    courseName: "Introduction to Computer Science",
+    teacherName: "Dr. Smith",
+    room: "RM-201",
+    day: "Monday",
+    startTime: "09:00",
+    endTime: "10:30",
+    type: "lecture",
+  },
+  {
+    id: "2",
+    courseCode: "MATH202",
+    courseName: "Calculus II",
+    teacherName: "Prof. Johnson",
+    room: "LAB-102",
+    day: "Monday",
+    startTime: "11:00",
+    endTime: "13:00",
+    type: "lab",
+  },
+];
 
-export default async function DepartmentScheduleView() {
-  const { departments, programs, sections } = await getMockFilters();
-  const entries = await getFilteredSchedule();
+export function DepartmentScheduleView() {
+  const { departments, programs, sections } = FILTERS;
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -79,7 +72,7 @@ export default async function DepartmentScheduleView() {
 
       <Card className="border-none shadow-md overflow-hidden bg-white/40 backdrop-blur-md">
         <CardContent className="p-0">
-          <TimetableGrid entries={entries} />
+          <TimetableGrid entries={SCHEDULES} />
         </CardContent>
       </Card>
       
@@ -97,3 +90,5 @@ export default async function DepartmentScheduleView() {
     </div>
   );
 }
+
+export default DepartmentScheduleView;

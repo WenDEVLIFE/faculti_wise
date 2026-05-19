@@ -1,14 +1,13 @@
 "use client";
 
-import Link from "next/link";
+import { Link, useNavigate } from "react-router-dom";
 import { useEffect } from "react";
-import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/context/AuthContext";
 import { appRoutes } from "@/lib/constants/routes.constants";
 
 export default function HomePageView() {
   const { profile } = useAuth();
-  const router = useRouter();
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (profile) {
@@ -16,9 +15,9 @@ export default function HomePageView() {
         profile.role === 'admin' ? appRoutes.dashboard :
         profile.role === 'teacher' ? appRoutes.teacherDashboard :
         appRoutes.studentDashboard;
-      router.push(redirectPath);
+      navigate(redirectPath);
     }
-  }, [profile, router]);
+  }, [profile, navigate]);
   return (
     <main className="min-h-screen overflow-hidden bg-[radial-gradient(circle_at_top_left,_rgba(245,158,11,0.14),_transparent_35%),radial-gradient(circle_at_top_right,_rgba(15,118,110,0.12),_transparent_30%),linear-gradient(180deg,_#fffdf8_0%,_#f6f1e7_100%)] text-stone-900">
       <div className="mx-auto flex min-h-screen w-full max-w-7xl flex-col px-6 py-6 sm:px-8 lg:px-10">
@@ -32,7 +31,7 @@ export default function HomePageView() {
             </p>
           </div>
           <Link
-            href={appRoutes.login}
+            to={appRoutes.login}
             className="inline-flex h-11 items-center justify-center rounded-full bg-stone-900 px-5 text-sm font-semibold text-white transition hover:bg-stone-800"
           >
             Sign in
@@ -59,7 +58,7 @@ export default function HomePageView() {
 
             <div className="flex flex-col gap-3 sm:flex-row">
               <Link
-                href={appRoutes.login}
+                to={appRoutes.login}
                 className="inline-flex h-12 items-center justify-center rounded-full bg-amber-500 px-6 text-sm font-semibold text-white shadow-[0_18px_40px_rgba(245,158,11,0.35)] transition hover:bg-amber-600"
               >
                 Open login

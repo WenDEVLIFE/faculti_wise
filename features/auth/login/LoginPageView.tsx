@@ -1,16 +1,15 @@
 "use client";
 
-import Link from "next/link";
+import { Link, useNavigate } from "react-router-dom";
 
 import { appRoutes } from "@/lib/constants/routes.constants";
 import { Eye, EyeOff } from "lucide-react";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/context/AuthContext";
 
 export default function LoginPageView() {
-  const router = useRouter();
+  const navigate = useNavigate();
   const { profile, login, setDemoProfile, isDemoMode, loading: authLoading } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -24,9 +23,9 @@ export default function LoginPageView() {
         profile.role === 'admin' ? appRoutes.dashboard :
           profile.role === 'teacher' ? appRoutes.teacherDashboard :
             appRoutes.studentDashboard;
-      router.push(redirectPath);
+      navigate(redirectPath);
     }
-  }, [profile, router]);
+  }, [profile, navigate]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
