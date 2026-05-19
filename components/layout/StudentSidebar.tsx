@@ -31,11 +31,10 @@ export function StudentSidebar({ open = false, onClose }: StudentSidebarProps) {
   const activeTab = searchParams.get("tab") || "faculty-search";
 
   return (
-    <div className="fixed inset-y-0 left-0 z-50 flex h-full w-64 flex-col border-r border-border bg-surface md:relative md:z-auto transition-transform duration-300 ease-in-out md:translate-x-0"
-         style={{
-           transform: open ? 'translateX(0)' : 'translateX(-100%)',
-         }}
-    >
+    <div className={cn(
+      "fixed inset-y-0 left-0 z-50 flex h-full w-64 flex-col border-r border-border bg-surface md:relative md:z-auto md:translate-x-0 transition-transform duration-300 ease-in-out",
+      open ? "translate-x-0" : "-translate-x-full"
+    )}>
       <div className="flex h-16 items-center justify-between border-b border-border px-6">
         <Link to="/student" className="flex items-center gap-2 flex-1">
           <div className="flex h-8 w-8 items-center justify-center rounded-md bg-indigo-600 text-white shadow-sm">
