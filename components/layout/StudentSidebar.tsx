@@ -9,7 +9,8 @@ import {
   Building2,
   User,
   GraduationCap,
-  ClipboardList
+  ClipboardList,
+  X
 } from "lucide-react";
 
 const navigation = [
@@ -20,21 +21,37 @@ const navigation = [
   { name: "Settings", tab: "settings", href: "/student?tab=settings", icon: User },
 ];
 
-export function StudentSidebar() {
+interface StudentSidebarProps {
+  open?: boolean;
+  onClose?: () => void;
+}
+
+export function StudentSidebar({ open = false, onClose }: StudentSidebarProps) {
   const [searchParams] = useSearchParams();
   const activeTab = searchParams.get("tab") || "faculty-search";
 
   return (
-    <div className="flex h-full w-64 flex-col border-r border-border bg-surface">
-      <div className="flex h-16 items-center border-b border-border px-6">
-        <Link to="/student" className="flex items-center gap-2">
+    <div className="fixed inset-y-0 left-0 z-50 flex h-full w-64 flex-col border-r border-border bg-surface md:relative md:z-auto transition-transform duration-300 ease-in-out md:translate-x-0"
+         style={{
+           transform: open ? 'translateX(0)' : 'translateX(-100%)',
+         }}
+    >
+      <div className="flex h-16 items-center justify-between border-b border-border px-6">
+        <Link to="/student" className="flex items-center gap-2 flex-1">
           <div className="flex h-8 w-8 items-center justify-center rounded-md bg-indigo-600 text-white shadow-sm">
             <GraduationCap className="h-5 w-5" />
           </div>
-          <span className="text-xl font-bold font-source-serif text-text tracking-tight">
+          <span className="text-xl font-bold font-source-serif text-text tracking-tight hidden sm:inline">
             Faculty_Wise
           </span>
         </Link>
+        <button
+          onClick={onClose}
+          className="md:hidden p-1 hover:bg-surface-alt rounded-md transition-colors text-text-muted hover:text-text"
+          aria-label="Close sidebar"
+        >
+          <X className="h-5 w-5" />
+        </button>
       </div>
       <div className="flex flex-1 flex-col overflow-y-auto px-4 py-6">
         <nav className="flex flex-1 flex-col gap-1">
