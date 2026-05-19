@@ -29,4 +29,4 @@ This document tracks the core system and infrastructure tasks for Faculty_Wise.
 ## 5. UI/UX Refinement
 - [ ] **Global Search**: Unified search for users, courses, and schedules.
 - [ ] **Dark Mode Support**: Complete the theme implementation for better accessibility.
-- [ ] **Mobile Responsiveness**: Ensure all management dashboards are usable on tablet and mobile devices.
+- [x] **Mobile Responsiveness**: Ensure all management dashboards are usable on tablet and mobile devices.
