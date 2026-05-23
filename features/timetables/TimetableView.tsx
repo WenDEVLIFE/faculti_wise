@@ -30,7 +30,7 @@ export default function TimetableView({ title, subtitle }: TimetableViewProps) {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!profile || authLoading) return;
+    if (!profile || !profile.id || authLoading) return;
 
     const db = getDb();
     if (!db) {
