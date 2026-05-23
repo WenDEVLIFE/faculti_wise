@@ -147,7 +147,7 @@ export function StudentScheduleView() {
   };
 
   useEffect(() => {
-    if (!profile) return;
+    if (!profile || !profile.id) return;
 
     const db = getDb();
     if (!db) {

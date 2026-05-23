@@ -13,7 +13,7 @@ export function TeacherPersonalInfo() {
   const [teacherData, setTeacherData] = useState<any>(null);
 
   useEffect(() => {
-    if (!profile) return;
+    if (!profile || !profile.id) return;
 
     const db = getDb();
     if (!db) {
@@ -123,7 +123,7 @@ export function TeacherPersonalInfo() {
           </div>
           <div className="space-y-1">
             <p className="text-[10px] font-bold text-text-muted uppercase tracking-widest">Employee ID</p>
-            <p className="text-sm font-semibold text-text">{teacherData?.employeeNo || profile.id.substring(0, 8).toUpperCase()}</p>
+            <p className="text-sm font-semibold text-text">{teacherData?.employeeNo || (profile.id ? profile.id.substring(0, 8).toUpperCase() : "N/A")}</p>
           </div>
         </div>
       </CardContent>
