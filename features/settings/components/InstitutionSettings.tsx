@@ -9,6 +9,7 @@ import { Section, Term } from "@/lib/types/section-term.types";
 import { User } from "@/lib/types/firestore.types";
 import { ImportSummary } from "@/lib/types/data-import.types";
 import { departmentsService } from "@/features/departments/departments.service";
+import { programsService } from "@/features/programs/programs.service";
 import { sectionsService, termsService } from "@/features/sections/sections.service";
 import { AddEditDepartmentModal } from "@/features/departments/components/AddEditDepartmentModal";
 import { DepartmentCard } from "@/features/departments/components/DepartmentCard";
@@ -53,7 +54,7 @@ export function InstitutionSettings() {
   const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
-    // Subscribe to departments and get programs
+    // Subscribe to departments
     const unsubscribeDepts = departmentsService.subscribeDepartments((data) => {
       setDepartments(data);
     });
@@ -67,6 +68,14 @@ export function InstitutionSettings() {
     // Subscribe to terms
     const unsubscribeTerms = termsService.subscribeAll((data) => {
       setTerms(data);
+    });
+
+    // Subscribe to programs in real-time
+    const unsubscribePrograms = programsService.subscribePrograms((data) => {
+      setPrograms(data);
+      if (data.length > 0 && !selectedProgramId) {
+        setSelectedProgramId(data[0].id);
+      }
     });
 
     // Load teachers
@@ -83,21 +92,13 @@ export function InstitutionSettings() {
       }
     };
 
-    // Load programs from mock data
-    const { mockData } = require("@/lib/constants/mockData");
-    if (mockData.programs) {
-      setPrograms(mockData.programs);
-      if (mockData.programs.length > 0) {
-        setSelectedProgramId(mockData.programs[0].id);
-      }
-    }
-
     loadTeachers();
 
     return () => {
       unsubscribeDepts();
       unsubscribeSections();
       unsubscribeTerms();
+      unsubscribePrograms();
     };
   }, []);
 
