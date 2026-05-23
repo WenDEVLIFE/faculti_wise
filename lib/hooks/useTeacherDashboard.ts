@@ -8,13 +8,13 @@ import type { TeacherDashboardData, UpcomingSession, TeacherCourse, TeacherStats
 import type { Course, Schedule } from '@/lib/types/firestore.types';
 
 export function useTeacherDashboard() {
-  const { user } = useAuth();
+  const { profile } = useAuth();
   const [dashboardData, setDashboardData] = useState<TeacherDashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
-    if (!user) {
+    if (!profile || !profile.id) {
       setLoading(false);
       return;
     }
@@ -31,7 +31,7 @@ export function useTeacherDashboard() {
 
       // Listen to schedules in real-time
       const schedulesRef = collection(db, 'schedules');
-      const schedulesQ = query(schedulesRef, where('teacherId', '==', user.uid));
+      const schedulesQ = query(schedulesRef, where('teacherId', '==', profile.id));
       
       const unsubSchedules = onSnapshot(schedulesQ, async (schedulesSnapshot) => {
         try {
@@ -51,7 +51,7 @@ export function useTeacherDashboard() {
 
               // Listen to teacher availability
               const teachersRef = collection(db, 'teachers');
-              const teachersQ = query(teachersRef, where('uid', '==', user.uid));
+              const teachersQ = query(teachersRef, where('uid', '==', profile.id));
               
               const unsubTeachers = onSnapshot(teachersQ, (teachersSnapshot) => {
                 const teacherDoc = teachersSnapshot.docs[0];
@@ -159,7 +159,7 @@ export function useTeacherDashboard() {
       setError(err instanceof Error ? err : new Error('Unknown error'));
       setLoading(false);
     }
-  }, [user?.uid]);
+  }, [profile?.id]);
 
   return { dashboardData, loading, error };
 }
