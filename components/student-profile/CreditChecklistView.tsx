@@ -175,7 +175,7 @@ export function CreditChecklistView() {
     .filter((c) => c.status === "remaining")
     .reduce((acc, c) => acc + c.units, 0);
 
-  const progressPercentage = Math.round((completedUnits / totalRequiredUnits) * 100);
+  const progressPercentage = totalRequiredUnits > 0 ? Math.round((completedUnits / totalRequiredUnits) * 100) : 0;
 
   // GPA calculation (Philippine system where 1.0 is highest, 3.0 is passing, weighted by units)
   const completedCoursesWithGrades = curriculum.filter(
