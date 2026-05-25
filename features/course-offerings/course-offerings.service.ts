@@ -133,12 +133,18 @@ export const courseOfferingsService = {
     }
 
     const offeringsRef = collection(db, "courseOfferings");
-    const docRef = await addDoc(offeringsRef, {
+    // Filter out undefined values to avoid Firebase errors
+    const documentData = {
       ...data,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
       createdBy: performingUser?.uid,
-    });
+    };
+    // Remove undefined fields
+    Object.keys(documentData).forEach(
+      (key) => documentData[key as keyof typeof documentData] === undefined && delete documentData[key as keyof typeof documentData]
+    );
+    const docRef = await addDoc(offeringsRef, documentData);
 
     const newOffering: CourseOffering = {
       id: docRef.id,
@@ -184,10 +190,15 @@ export const courseOfferingsService = {
     }
 
     const offeringRef = doc(db, "courseOfferings", offeringId);
-    await updateDoc(offeringRef, {
+    // Filter out undefined values
+    const updateData = {
       ...data,
       updatedAt: serverTimestamp(),
-    });
+    };
+    Object.keys(updateData).forEach(
+      (key) => updateData[key as keyof typeof updateData] === undefined && delete updateData[key as keyof typeof updateData]
+    );
+    await updateDoc(offeringRef, updateData);
 
     if (performingUser) {
       await auditService.logAction({
@@ -334,8 +345,43 @@ export const courseOfferingsService = {
     const courseId = offering.courseId;
     let course = null;
 
-    if (mockData.courses) {
+    const db = getDb();
+    
+    // Try to fetch from Firestore first
+    if (db) {
+      try {
+        const courseRef = doc(db, "courses", courseId);
+        const courseSnap = await getDoc(courseRef);
+        if (courseSnap.exists()) {
+          const data = courseSnap.data();
+          course = {
+            id: courseSnap.id,
+            code: data.code || "",
+            name: data.name || "",
+            description: data.description || "",
+            units: Number(data.units) || 0,
+            lectureHours: Number(data.lectureHours) || 0,
+            labHours: Number(data.labHours) || 0,
+            category: data.category || "major",
+            department: data.department || "",
+          } as Course;
+        }
+      } catch (error) {
+        console.error(`Failed to fetch course ${courseId} from Firestore:`, error);
+      }
+    }
+
+    // Fall back to mockData if not found in Firestore
+    if (!course && mockData.courses) {
+      // First try exact ID match
       course = (mockData.courses as any).find((c) => c.id === courseId);
+      
+      // If not found, log for debugging
+      if (!course) {
+        console.warn(`Course ${courseId} not found in mockData. Available courses:`, 
+          (mockData.courses as any).map((c: any) => ({ id: c.id, code: c.code, name: c.name }))
+        );
+      }
     }
 
     if (!course) {

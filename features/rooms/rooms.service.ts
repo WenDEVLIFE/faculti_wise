@@ -102,10 +102,15 @@ export const roomsService = {
     }
 
     const roomRef = doc(db, "rooms", roomId);
-    await updateDoc(roomRef, {
+    // Filter out undefined values
+    const updateData = { 
       ...data,
       updatedAt: serverTimestamp(),
-    });
+    };
+    Object.keys(updateData).forEach(
+      (key) => updateData[key as keyof typeof updateData] === undefined && delete updateData[key as keyof typeof updateData]
+    );
+    await updateDoc(roomRef, updateData);
 
     if (performingUser) {
       await auditService.logAction({

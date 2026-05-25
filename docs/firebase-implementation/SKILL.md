@@ -131,8 +131,21 @@ Use this as the implementation baseline for Firebase database work.
 - `maxSlots: number`
 - `assignedUnits: number`
 - `status: "draft" | "published" | "archived"`
+- `notes: string | null` (optional)
+- `createdAt: Timestamp`
+- `updatedAt: Timestamp`
+- `createdBy: string` (uid of user who created)
 
-### 11) `timetableEntries/{entryId}`
+### 11) `institutionSettings/{settingsId}` (Singleton: always "default")
+- `institutionName: string`
+- `currentAcademicYear: string`
+- `systemLocale: string` (e.g., `en-US`, `fil-PH`)
+- `systemNotificationsEnabled: boolean`
+- `createdAt: Timestamp`
+- `updatedAt: Timestamp`
+- `createdBy: string` (uid of user who created)
+
+### 12) `timetableEntries/{entryId}`
 - `offeringId: string`
 - `roomId: string`
 - `dayOfWeek: "Monday" | "Tuesday" | "Wednesday" | "Thursday" | "Friday" | "Saturday" | "Sunday"`
@@ -141,7 +154,7 @@ Use this as the implementation baseline for Firebase database work.
 - `sessionType: "lecture" | "lab" | "seminar" | "other"`
 - `isPublished: boolean`
 
-### 12) `teacherAvailability/{availabilityId}`
+### 13) `teacherAvailability/{availabilityId}`
 - `teacherId: string`
 - `termId: string`
 - `lastUpdated: Timestamp`
@@ -152,14 +165,14 @@ Subcollection: `teacherAvailability/{availabilityId}/slots/{slotId}`
 - `endTime: string` (HH:mm)
 - `status: "preferred" | "available" | "unavailable"`
 
-### 13) `enrollments/{enrollmentId}`
+### 14) `enrollments/{enrollmentId}`
 - `studentId: string`
 - `offeringId: string`
 - `enrolledAt: Timestamp`
 - `status: "enrolled" | "dropped" | "completed"`
 - `finalGrade: number | null`
 
-### 14) `auditLogs/{logId}`
+### 15) `auditLogs/{logId}`
 - `actorUid: string`
 - `action: string`
 - `resourceType: string`

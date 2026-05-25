@@ -1,14 +1,46 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { User, Mail, Camera } from "lucide-react";
 
 import { useAuth } from "@/lib/context/AuthContext";
+import { getDb } from "@/lib/firebase";
+import { collection, query, where, onSnapshot } from "firebase/firestore";
 
 export function ProfileSettings() {
   const { profile } = useAuth();
+  const [studentData, setStudentData] = useState<any>(null);
+
+  // Load student-specific data from Firestore if available
+  useEffect(() => {
+    if (!profile || !profile.id || profile.role !== 'student') {
+      return;
+    }
+
+    const db = getDb();
+    if (!db) {
+      // In demo mode, student data is already in profile
+      setStudentData(profile);
+      return;
+    }
+
+    // Query students collection by uid
+    const studentsRef = collection(db, "students");
+    const q = query(studentsRef, where("uid", "==", profile.id));
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      if (!snapshot.empty) {
+        setStudentData(snapshot.docs[0].data());
+      } else {
+        // If no student record exists, use profile data
+        setStudentData(profile);
+      }
+    });
+
+    return () => unsubscribe();
+  }, [profile]);
 
   if (!profile) return null;
 
@@ -36,7 +68,7 @@ export function ProfileSettings() {
               </button>
             </div>
             <div className="space-y-1">
-              <h3 className="font-bold text-text">{profile.displayName}</h3>
+              <h3 className="font-bold text-text">{studentData?.displayName || profile.displayName || profile.email}</h3>
               <p className="text-xs text-text-muted">
                 {profile.role.charAt(0).toUpperCase() + profile.role.slice(1)} • Since {profile.createdAt ? new Date(profile.createdAt.seconds * 1000).getFullYear() : "2024"}
               </p>
@@ -50,8 +82,9 @@ export function ProfileSettings() {
                 <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-text-muted" />
                 <input 
                   type="text" 
-                  defaultValue={profile.displayName}
-                  className="w-full pl-10 pr-4 py-2.5 bg-white border border-border rounded-xl text-sm focus:outline-none focus:ring-4 focus:ring-primary/10 transition-all"
+                  defaultValue={studentData?.displayName || profile.displayName || ''}
+                  placeholder="Enter your full name"
+                  className="w-full pl-10 pr-4 py-2.5 bg-white border border-border rounded-xl text-sm focus:outline-none focus:ring-4 focus:ring-primary/10 transition-all placeholder-text-muted/50"
                 />
               </div>
             </div>

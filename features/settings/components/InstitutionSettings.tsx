@@ -3,15 +3,20 @@
 import React, { useState, useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
-import { Building2, Calendar, Globe, Bell, Plus, AlertTriangle, Layers, Upload, CheckCircle2 } from "lucide-react";
+import { Building2, Calendar, Globe, Bell, Plus, AlertTriangle, Layers, Upload, CheckCircle2, BookOpen } from "lucide-react";
 import { Department } from "@/lib/types/department.types";
+import { InstitutionSettings as InstitutionSettingsType } from "@/lib/types/institution.types";
 import { Section, Term } from "@/lib/types/section-term.types";
 import { User } from "@/lib/types/firestore.types";
 import { ImportSummary } from "@/lib/types/data-import.types";
+import { institutionService } from "@/features/settings/institution.service";
 import { departmentsService } from "@/features/departments/departments.service";
+import { programsService } from "@/features/programs/programs.service";
 import { sectionsService, termsService } from "@/features/sections/sections.service";
 import { AddEditDepartmentModal } from "@/features/departments/components/AddEditDepartmentModal";
 import { DepartmentCard } from "@/features/departments/components/DepartmentCard";
+import { AddEditProgramModal } from "@/features/programs/components/AddEditProgramModal";
+import { ProgramCard } from "@/features/programs/components/ProgramCard";
 import { AddEditSectionModal } from "@/features/sections/components/AddEditSectionModal";
 import { SectionCard } from "@/features/sections/components/SectionCard";
 import { AddEditTermModal } from "@/features/sections/components/AddEditTermModal";
@@ -22,15 +27,31 @@ import { BackupManager } from "@/features/backups/components/BackupManager";
 
 export function InstitutionSettings() {
   const { profile } = useAuth();
-  const [departments, setDepartments] = useState<Department[]>([]);
+  const [departments, setDepartments] = useState<any[]>([]);
+  const [programs, setPrograms] = useState<any[]>([]);
   const [sections, setSections] = useState<Section[]>([]);
   const [terms, setTerms] = useState<Term[]>([]);
   const [teachers, setTeachers] = useState<Record<string, User>>({});
-  const [programs, setPrograms] = useState<any[]>([]);
+
+  // Institution settings state
+  const [institutionSettings, setInstitutionSettings] = useState<InstitutionSettingsType | null>(null);
+  const [institutionFormData, setInstitutionFormData] = useState({
+    institutionName: "",
+    currentAcademicYear: "",
+    systemLocale: "en-US",
+    systemNotificationsEnabled: true,
+  });
+  const [savingSettings, setSavingSettings] = useState(false);
+  const [settingsMessage, setSettingsMessage] = useState<string | null>(null);
 
   // Department modal state
   const [isDeptModalOpen, setIsDeptModalOpen] = useState(false);
   const [departmentToEdit, setDepartmentToEdit] = useState<Department | undefined>();
+
+  // Program modal state
+  const [isProgramModalOpen, setIsProgramModalOpen] = useState(false);
+  const [programToEdit, setProgramToEdit] = useState<any | undefined>();
+  const [selectedDepartmentId, setSelectedDepartmentId] = useState("");
 
   // Section modal state
   const [isSectionModalOpen, setIsSectionModalOpen] = useState(false);
@@ -48,14 +69,34 @@ export function InstitutionSettings() {
   // UI state
   const [loading, setLoading] = useState(true);
   const [deptDeleteConfirm, setDeptDeleteConfirm] = useState<string | null>(null);
+  const [programDeleteConfirm, setProgramDeleteConfirm] = useState<string | null>(null);
   const [sectionDeleteConfirm, setSectionDeleteConfirm] = useState<string | null>(null);
   const [termDeleteConfirm, setTermDeleteConfirm] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
-    // Subscribe to departments and get programs
+    // Subscribe to institution settings
+    const unsubscribeSettings = institutionService.subscribeSettings((settings) => {
+      setInstitutionSettings(settings);
+      setInstitutionFormData({
+        institutionName: settings.institutionName,
+        currentAcademicYear: settings.currentAcademicYear,
+        systemLocale: settings.systemLocale,
+        systemNotificationsEnabled: settings.systemNotificationsEnabled,
+      });
+    });
+
+    // Subscribe to departments
     const unsubscribeDepts = departmentsService.subscribeDepartments((data) => {
       setDepartments(data);
+    });
+
+    // Subscribe to programs
+    const unsubscribePrograms = programsService.subscribePrograms((data) => {
+      setPrograms(data);
+      if (data.length > 0 && !selectedProgramId) {
+        setSelectedProgramId(data[0].id);
+      }
     });
 
     // Subscribe to sections
@@ -83,19 +124,11 @@ export function InstitutionSettings() {
       }
     };
 
-    // Load programs from mock data
-    const { mockData } = require("@/lib/constants/mockData");
-    if (mockData.programs) {
-      setPrograms(mockData.programs);
-      if (mockData.programs.length > 0) {
-        setSelectedProgramId(mockData.programs[0].id);
-      }
-    }
-
     loadTeachers();
 
     return () => {
       unsubscribeDepts();
+      unsubscribePrograms();
       unsubscribeSections();
       unsubscribeTerms();
     };
@@ -120,6 +153,32 @@ export function InstitutionSettings() {
     } catch (err) {
       console.error("Error deleting department:", err);
       alert("Failed to delete department");
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  // Program handlers
+  const handleAddProgramClick = () => {
+    setProgramToEdit(undefined);
+    setSelectedDepartmentId(departments.length > 0 ? departments[0].id : "");
+    setIsProgramModalOpen(true);
+  };
+
+  const handleEditProgramClick = (program: any) => {
+    setProgramToEdit(program);
+    setSelectedDepartmentId(program.departmentId);
+    setIsProgramModalOpen(true);
+  };
+
+  const handleDeleteProgramClick = async (program: any) => {
+    setDeleting(true);
+    try {
+      await programsService.deleteProgram(program.id, profile || undefined);
+      setProgramDeleteConfirm(null);
+    } catch (err) {
+      console.error("Error deleting program:", err);
+      alert("Failed to delete program");
     } finally {
       setDeleting(false);
     }
@@ -178,6 +237,11 @@ export function InstitutionSettings() {
     setDepartmentToEdit(undefined);
   };
 
+  const handleProgramModalClose = () => {
+    setIsProgramModalOpen(false);
+    setProgramToEdit(undefined);
+  };
+
   const handleSectionModalClose = () => {
     setIsSectionModalOpen(false);
     setSectionToEdit(undefined);
@@ -196,6 +260,33 @@ export function InstitutionSettings() {
     setTimeout(() => setImportSuccessMessage(null), 5000);
   };
 
+  // Institution settings handlers
+  const handleUpdateInstitutionSettings = async () => {
+    if (!profile) return;
+
+    setSavingSettings(true);
+    setSettingsMessage(null);
+
+    try {
+      await institutionService.updateSettings(
+        {
+          institutionName: institutionFormData.institutionName,
+          currentAcademicYear: institutionFormData.currentAcademicYear,
+          systemLocale: institutionFormData.systemLocale,
+          systemNotificationsEnabled: institutionFormData.systemNotificationsEnabled,
+        },
+        profile
+      );
+      setSettingsMessage("Institution settings updated successfully");
+      setTimeout(() => setSettingsMessage(null), 3000);
+    } catch (error) {
+      console.error("Failed to update institution settings:", error);
+      setSettingsMessage("Failed to save settings");
+    } finally {
+      setSavingSettings(false);
+    }
+  };
+
   const filteredSections = selectedProgramId
     ? sections.filter((s) => s.programId === selectedProgramId)
     : sections;
@@ -211,6 +302,17 @@ export function InstitutionSettings() {
           </CardTitle>
         </CardHeader>
         <CardContent className="pt-6 space-y-6">
+          {settingsMessage && (
+            <div className={`p-4 rounded-xl border flex items-center gap-2 text-sm ${
+              settingsMessage.includes("success") 
+                ? "bg-emerald-50 border-emerald-200 text-emerald-900" 
+                : "bg-red-50 border-red-200 text-red-900"
+            }`}>
+              <CheckCircle2 className="h-4 w-4 shrink-0" />
+              <span>{settingsMessage}</span>
+            </div>
+          )}
+
           <div className="grid gap-6">
             <div className="space-y-2">
               <label className="text-xs font-bold text-text-muted uppercase tracking-wider">Institution Name</label>
@@ -218,7 +320,8 @@ export function InstitutionSettings() {
                 <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-text-muted" />
                 <input 
                   type="text" 
-                  defaultValue="FacultyWise University"
+                  value={institutionFormData.institutionName}
+                  onChange={(e) => setInstitutionFormData({ ...institutionFormData, institutionName: e.target.value })}
                   className="w-full pl-10 pr-4 py-2.5 bg-white border border-border rounded-xl text-sm focus:outline-none focus:ring-4 focus:ring-primary/10 transition-all"
                 />
               </div>
@@ -229,19 +332,26 @@ export function InstitutionSettings() {
                 <label className="text-xs font-bold text-text-muted uppercase tracking-wider">Current Academic Year</label>
                 <div className="relative">
                   <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-text-muted" />
-                  <select className="w-full pl-10 pr-4 py-2.5 bg-white border border-border rounded-xl text-sm appearance-none focus:outline-none focus:ring-4 focus:ring-primary/10 transition-all">
-                    <option>2024 - 2025</option>
-                    <option>2023 - 2024</option>
-                  </select>
+                  <input 
+                    type="text" 
+                    value={institutionFormData.currentAcademicYear}
+                    onChange={(e) => setInstitutionFormData({ ...institutionFormData, currentAcademicYear: e.target.value })}
+                    placeholder="e.g., 2024-2025"
+                    className="w-full pl-10 pr-4 py-2.5 bg-white border border-border rounded-xl text-sm focus:outline-none focus:ring-4 focus:ring-primary/10 transition-all"
+                  />
                 </div>
               </div>
               <div className="space-y-2">
                 <label className="text-xs font-bold text-text-muted uppercase tracking-wider">System Locale</label>
                 <div className="relative">
                   <Globe className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-text-muted" />
-                  <select className="w-full pl-10 pr-4 py-2.5 bg-white border border-border rounded-xl text-sm appearance-none focus:outline-none focus:ring-4 focus:ring-primary/10 transition-all">
-                    <option>English (United States)</option>
-                    <option>Filipino (Philippines)</option>
+                  <select 
+                    value={institutionFormData.systemLocale}
+                    onChange={(e) => setInstitutionFormData({ ...institutionFormData, systemLocale: e.target.value })}
+                    className="w-full pl-10 pr-4 py-2.5 bg-white border border-border rounded-xl text-sm appearance-none focus:outline-none focus:ring-4 focus:ring-primary/10 transition-all"
+                  >
+                    <option value="en-US">English (United States)</option>
+                    <option value="fil-PH">Filipino (Philippines)</option>
                   </select>
                 </div>
               </div>
@@ -254,9 +364,19 @@ export function InstitutionSettings() {
                 <Bell className="h-4 w-4 text-primary" />
                 <span className="text-sm font-semibold text-text">System Notifications</span>
               </div>
-              <div className="h-5 w-10 rounded-full bg-primary relative cursor-pointer">
-                <div className="absolute right-0.5 top-0.5 h-4 w-4 rounded-full bg-white shadow-sm" />
-              </div>
+              <button
+                onClick={() => setInstitutionFormData({ 
+                  ...institutionFormData, 
+                  systemNotificationsEnabled: !institutionFormData.systemNotificationsEnabled 
+                })}
+                className={`h-5 w-10 rounded-full relative cursor-pointer transition-all ${
+                  institutionFormData.systemNotificationsEnabled ? "bg-primary" : "bg-gray-300"
+                }`}
+              >
+                <div className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow-sm transition-all ${
+                  institutionFormData.systemNotificationsEnabled ? "right-0.5" : "left-0.5"
+                }`} />
+              </button>
             </div>
             <p className="text-xs text-text-muted leading-relaxed">
               Enable automated email notifications for faculty load alerts and schedule conflicts.
@@ -264,7 +384,13 @@ export function InstitutionSettings() {
           </div>
 
           <div className="flex justify-end pt-2">
-            <Button size="sm" className="px-8 shadow-md">Update Configuration</Button>
+            <Button 
+              onClick={handleUpdateInstitutionSettings}
+              disabled={savingSettings}
+              className="px-8 shadow-md"
+            >
+              {savingSettings ? "Saving..." : "Update Configuration"}
+            </Button>
           </div>
         </CardContent>
       </Card>
@@ -348,6 +474,112 @@ export function InstitutionSettings() {
                     isAdmin={true}
                     onEdit={handleEditDeptClick}
                     onDelete={(d) => setDeptDeleteConfirm(d.id)}
+                  />
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Program Management Card */}
+      <Card className="border-border/50 shadow-sm overflow-hidden bg-white/80 backdrop-blur-sm">
+        <CardHeader className="bg-surface-alt/30 border-b border-border/50 flex items-center justify-between">
+          <CardTitle className="text-lg flex items-center gap-2">
+            <BookOpen className="h-5 w-5 text-primary" />
+            Program Management
+          </CardTitle>
+          <Button
+            onClick={handleAddProgramClick}
+            className="h-9 gap-2"
+          >
+            <Plus className="h-4 w-4" />
+            Add Program
+          </Button>
+        </CardHeader>
+
+        <CardContent className="pt-6 space-y-4">
+          {departments.length > 0 && (
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-text-muted">Filter by Department</label>
+              <select
+                value={selectedDepartmentId}
+                onChange={(e) => setSelectedDepartmentId(e.target.value)}
+                className="w-full h-10 px-3 bg-surface-alt border border-border rounded-lg outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm appearance-none cursor-pointer"
+              >
+                <option value="">All Departments</option>
+                {departments.map((dept) => (
+                  <option key={dept.id} value={dept.id}>
+                    {dept.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {loading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {[1, 2, 3, 4].map((i) => (
+                <div
+                  key={i}
+                  className="h-40 rounded-2xl bg-surface-alt/50 animate-pulse"
+                />
+              ))}
+            </div>
+          ) : programs.length === 0 ? (
+            <div className="text-center py-12 px-4 rounded-xl bg-surface/50">
+              <BookOpen className="h-12 w-12 text-text-muted/30 mx-auto mb-3" />
+              <p className="text-text-muted mb-4">No programs created yet</p>
+              <Button onClick={handleAddProgramClick} variant="secondary">
+                Create First Program
+              </Button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {(selectedDepartmentId
+                ? programs.filter((p) => p.departmentId === selectedDepartmentId)
+                : programs
+              ).map((program) => (
+                <div key={program.id} className="relative">
+                  {programDeleteConfirm === program.id && (
+                    <div className="absolute inset-0 z-10 flex items-center justify-center rounded-2xl bg-black/50 backdrop-blur-sm">
+                      <div className="bg-white rounded-xl p-4 shadow-lg w-full mx-2">
+                        <div className="flex items-center gap-2 mb-4">
+                          <AlertTriangle className="h-5 w-5 text-red-600" />
+                          <h4 className="font-semibold text-text">Delete Program?</h4>
+                        </div>
+                        <p className="text-sm text-text-muted mb-4">
+                          This will permanently delete the program "{program.name}". This action cannot be undone.
+                        </p>
+                        <div className="flex gap-2">
+                          <Button
+                            type="button"
+                            variant="secondary"
+                            className="flex-1 h-9"
+                            onClick={() => setProgramDeleteConfirm(null)}
+                          >
+                            Cancel
+                          </Button>
+                          <Button
+                            type="button"
+                            className="flex-1 h-9 bg-red-600 hover:bg-red-700"
+                            disabled={deleting}
+                            onClick={() => handleDeleteProgramClick(program)}
+                          >
+                            {deleting ? "Deleting..." : "Delete"}
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  <ProgramCard
+                    program={program}
+                    departmentName={
+                      departments.find((d) => d.id === program.departmentId)?.name
+                    }
+                    isAdmin={true}
+                    onEdit={handleEditProgramClick}
+                    onDelete={(p) => setProgramDeleteConfirm(p.id)}
                   />
                 </div>
               ))}
@@ -617,6 +849,13 @@ export function InstitutionSettings() {
         isOpen={isDeptModalOpen}
         onClose={handleDeptModalClose}
         departmentToEdit={departmentToEdit}
+      />
+
+      <AddEditProgramModal
+        isOpen={isProgramModalOpen}
+        onClose={handleProgramModalClose}
+        programToEdit={programToEdit}
+        departments={departments}
       />
 
       <AddEditSectionModal

@@ -105,9 +105,12 @@ export const departmentsService = {
     }
 
     const departmentRef = doc(db, "departments", departmentId);
-    await updateDoc(departmentRef, {
-      ...data,
-    });
+    // Filter out undefined values
+    const updateData = { ...data };
+    Object.keys(updateData).forEach(
+      (key) => updateData[key as keyof typeof updateData] === undefined && delete updateData[key as keyof typeof updateData]
+    );
+    await updateDoc(departmentRef, updateData);
 
     if (performingUser) {
       await auditService.logAction({

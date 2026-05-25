@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useAuth } from "@/lib/context/AuthContext";
 import { mockData } from "@/lib/constants/mockData";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
@@ -20,6 +20,8 @@ import {
   Briefcase,
   Play
 } from "lucide-react";
+import { getDb } from "@/lib/firebase";
+import { collection, query, where, onSnapshot } from "firebase/firestore";
 
 // Curriculum database course structure
 interface CurriculumCourse {
@@ -34,60 +36,113 @@ interface CurriculumCourse {
 
 export function CreditChecklistView() {
   const { profile } = useAuth();
-  
-  // Custom baseline curriculum dataset for a BS Computer Science student
-  const initialCurriculum: CurriculumCourse[] = [
-    // 1st Year, 1st Sem
-    { code: "CS-101", name: "Introduction to Computer Science", units: 3, category: "core", grade: "1.25", status: "completed", term: "1st Year - 1st Sem" },
-    { code: "MATH-111", name: "College Algebra & Trigonometry", units: 3, category: "gen_ed", grade: "1.50", status: "completed", term: "1st Year - 1st Sem" },
-    { code: "ENG-101", name: "Purposive Communication", units: 3, category: "gen_ed", grade: "1.75", status: "completed", term: "1st Year - 1st Sem" },
-    { code: "NSTP-1", name: "National Service Training Program 1", units: 3, category: "gen_ed", grade: "1.00", status: "completed", term: "1st Year - 1st Sem" },
-    
-    // 1st Year, 2nd Sem
-    { code: "CS-102", name: "Computer Programming I", units: 4, category: "core", grade: "1.25", status: "completed", term: "1st Year - 2nd Sem" },
-    { code: "MATH-122", name: "Calculus I", units: 4, category: "core", grade: "1.50", status: "completed", term: "1st Year - 2nd Sem" },
-    { code: "NSTP-2", name: "National Service Training Program 2", units: 3, category: "gen_ed", grade: "1.25", status: "completed", term: "1st Year - 2nd Sem" },
-    { code: "PE-1", name: "Physical Education 1 (Fitness)", units: 2, category: "gen_ed", grade: "1.00", status: "completed", term: "1st Year - 2nd Sem" },
-
-    // 2nd Year, 1st Sem
-    { code: "CS-201", name: "Computer Programming II", units: 4, category: "core", grade: "1.50", status: "completed", term: "2nd Year - 1st Sem" },
-    { code: "CS-203", name: "Discrete Structures I", units: 3, category: "core", grade: "1.75", status: "completed", term: "2nd Year - 1st Sem" },
-    { code: "PE-2", name: "Physical Education 2 (Rhythms)", units: 2, category: "gen_ed", grade: "1.25", status: "completed", term: "2nd Year - 1st Sem" },
-    { code: "HUM-101", name: "Art Appreciation", units: 3, category: "gen_ed", grade: "2.00", status: "completed", term: "2nd Year - 1st Sem" },
-
-    // 2nd Year, 2nd Sem
-    { code: "CS-202", name: "Data Structures & Algorithms", units: 4, category: "core", grade: "1.50", status: "completed", term: "2nd Year - 2nd Sem" },
-    { code: "CS-204", name: "Object-Oriented Programming", units: 3, category: "core", grade: "1.50", status: "completed", term: "2nd Year - 2nd Sem" },
-    { code: "MATH-201", name: "Probability & Statistics", units: 3, category: "core", grade: "1.75", status: "completed", term: "2nd Year - 2nd Sem" },
-    { code: "PE-3", name: "Physical Education 3 (Individual Sports)", units: 2, category: "gen_ed", grade: "1.25", status: "completed", term: "2nd Year - 2nd Sem" },
-
-    // 3rd Year, 1st Sem (Current Semester)
-    { code: "CS-301", name: "Design & Analysis of Algorithms", units: 3, category: "core", status: "in_progress", term: "3rd Year - 1st Sem" },
-    { code: "CS-303", name: "Database Management Systems", units: 3, category: "core", status: "in_progress", term: "3rd Year - 1st Sem" },
-    { code: "CS-305", name: "Computer Architecture & Org", units: 3, category: "core", status: "in_progress", term: "3rd Year - 1st Sem" },
-    { code: "SS-101", name: "Science, Technology & Society", units: 3, category: "gen_ed", status: "in_progress", term: "3rd Year - 1st Sem" },
-
-    // 3rd Year, 2nd Sem
-    { code: "CS-302", name: "Software Engineering", units: 4, category: "core", status: "remaining", term: "3rd Year - 2nd Sem" },
-    { code: "CS-304", name: "Operating Systems", units: 3, category: "core", status: "remaining", term: "3rd Year - 2nd Sem" },
-    { code: "CS-306", name: "Automata & Language Theory", units: 3, category: "core", status: "remaining", term: "3rd Year - 2nd Sem" },
-    { code: "CSE-1", name: "Web Systems Elective", units: 3, category: "elective", status: "remaining", term: "3rd Year - 2nd Sem" },
-
-    // 4th Year, 1st Sem
-    { code: "CS-401", name: "CS Thesis I", units: 3, category: "core", status: "remaining", term: "4th Year - 1st Sem" },
-    { code: "CS-403", name: "Networks & Communications", units: 3, category: "core", status: "remaining", term: "4th Year - 1st Sem" },
-    { code: "CSE-2", name: "Artificial Intelligence Elective", units: 3, category: "elective", status: "remaining", term: "4th Year - 1st Sem" },
-    { code: "LIT-101", name: "Philippine Literature", units: 3, category: "gen_ed", status: "remaining", term: "4th Year - 1st Sem" },
-
-    // 4th Year, 2nd Sem
-    { code: "CS-402", name: "CS Thesis II", units: 3, category: "core", status: "remaining", term: "4th Year - 2nd Sem" },
-    { code: "CS-404", name: "Information Assurance & Security", units: 3, category: "core", status: "remaining", term: "4th Year - 2nd Sem" },
-    { code: "CSE-3", name: "Mobile App Elective", units: 3, category: "elective", status: "remaining", term: "4th Year - 2nd Sem" },
-    { code: "PE-4", name: "Physical Education 4 (Team Sports)", units: 2, category: "gen_ed", status: "remaining", term: "4th Year - 2nd Sem" },
-  ];
-
-  const [curriculum, setCurriculum] = useState<CurriculumCourse[]>(initialCurriculum);
+  const [curriculum, setCurriculum] = useState<CurriculumCourse[]>([]);
   const [activeYear, setActiveYear] = useState<string>("3rd Year");
+  const [loading, setLoading] = useState(true);
+  const [studentProgram, setStudentProgram] = useState<any>(null);
+
+  // Load student's curriculum from Firestore
+  useEffect(() => {
+    if (!profile || !profile.id) {
+      setLoading(false);
+      return;
+    }
+
+    const db = getDb();
+
+    if (!db) {
+      // Demo mode: use mockData default curriculum
+      const defaultCurriculum: CurriculumCourse[] = [
+        // 1st Year, 1st Sem
+        { code: "CS-101", name: "Introduction to Computer Science", units: 3, category: "core", grade: "1.25", status: "completed", term: "1st Year - 1st Sem" },
+        { code: "MATH-111", name: "College Algebra & Trigonometry", units: 3, category: "gen_ed", grade: "1.50", status: "completed", term: "1st Year - 1st Sem" },
+        { code: "ENG-101", name: "Purposive Communication", units: 3, category: "gen_ed", grade: "1.75", status: "completed", term: "1st Year - 1st Sem" },
+        { code: "NSTP-1", name: "National Service Training Program 1", units: 3, category: "gen_ed", grade: "1.00", status: "completed", term: "1st Year - 1st Sem" },
+        
+        // 1st Year, 2nd Sem
+        { code: "CS-102", name: "Computer Programming I", units: 4, category: "core", grade: "1.25", status: "completed", term: "1st Year - 2nd Sem" },
+        { code: "MATH-122", name: "Calculus I", units: 4, category: "core", grade: "1.50", status: "completed", term: "1st Year - 2nd Sem" },
+        { code: "NSTP-2", name: "National Service Training Program 2", units: 3, category: "gen_ed", grade: "1.25", status: "completed", term: "1st Year - 2nd Sem" },
+        { code: "PE-1", name: "Physical Education 1 (Fitness)", units: 2, category: "gen_ed", grade: "1.00", status: "completed", term: "1st Year - 2nd Sem" },
+
+        // 2nd Year, 1st Sem
+        { code: "CS-201", name: "Computer Programming II", units: 4, category: "core", grade: "1.50", status: "completed", term: "2nd Year - 1st Sem" },
+        { code: "CS-203", name: "Discrete Structures I", units: 3, category: "core", grade: "1.75", status: "completed", term: "2nd Year - 1st Sem" },
+        { code: "PE-2", name: "Physical Education 2 (Rhythms)", units: 2, category: "gen_ed", grade: "1.25", status: "completed", term: "2nd Year - 1st Sem" },
+        { code: "HUM-101", name: "Art Appreciation", units: 3, category: "gen_ed", grade: "2.00", status: "completed", term: "2nd Year - 1st Sem" },
+
+        // 2nd Year, 2nd Sem
+        { code: "CS-202", name: "Data Structures & Algorithms", units: 4, category: "core", grade: "1.50", status: "completed", term: "2nd Year - 2nd Sem" },
+        { code: "CS-204", name: "Object-Oriented Programming", units: 3, category: "core", grade: "1.50", status: "completed", term: "2nd Year - 2nd Sem" },
+        { code: "MATH-201", name: "Probability & Statistics", units: 3, category: "core", grade: "1.75", status: "completed", term: "2nd Year - 2nd Sem" },
+        { code: "PE-3", name: "Physical Education 3 (Individual Sports)", units: 2, category: "gen_ed", grade: "1.25", status: "completed", term: "2nd Year - 2nd Sem" },
+
+        // 3rd Year, 1st Sem (Current Semester)
+        { code: "CS-301", name: "Design & Analysis of Algorithms", units: 3, category: "core", status: "in_progress", term: "3rd Year - 1st Sem" },
+        { code: "CS-303", name: "Database Management Systems", units: 3, category: "core", status: "in_progress", term: "3rd Year - 1st Sem" },
+        { code: "CS-305", name: "Computer Architecture & Org", units: 3, category: "core", status: "in_progress", term: "3rd Year - 1st Sem" },
+        { code: "SS-101", name: "Science, Technology & Society", units: 3, category: "gen_ed", status: "in_progress", term: "3rd Year - 1st Sem" },
+
+        // 3rd Year, 2nd Sem
+        { code: "CS-302", name: "Software Engineering", units: 4, category: "core", status: "remaining", term: "3rd Year - 2nd Sem" },
+        { code: "CS-304", name: "Operating Systems", units: 3, category: "core", status: "remaining", term: "3rd Year - 2nd Sem" },
+        { code: "CS-306", name: "Automata & Language Theory", units: 3, category: "core", status: "remaining", term: "3rd Year - 2nd Sem" },
+        { code: "CSE-1", name: "Web Systems Elective", units: 3, category: "elective", status: "remaining", term: "3rd Year - 2nd Sem" },
+
+        // 4th Year, 1st Sem
+        { code: "CS-401", name: "CS Thesis I", units: 3, category: "core", status: "remaining", term: "4th Year - 1st Sem" },
+        { code: "CS-403", name: "Networks & Communications", units: 3, category: "core", status: "remaining", term: "4th Year - 1st Sem" },
+        { code: "CSE-2", name: "Artificial Intelligence Elective", units: 3, category: "elective", status: "remaining", term: "4th Year - 1st Sem" },
+        { code: "LIT-101", name: "Philippine Literature", units: 3, category: "gen_ed", status: "remaining", term: "4th Year - 1st Sem" },
+
+        // 4th Year, 2nd Sem
+        { code: "CS-402", name: "CS Thesis II", units: 3, category: "core", status: "remaining", term: "4th Year - 2nd Sem" },
+        { code: "CS-404", name: "Information Assurance & Security", units: 3, category: "core", status: "remaining", term: "4th Year - 2nd Sem" },
+        { code: "CSE-3", name: "Mobile App Elective", units: 3, category: "elective", status: "remaining", term: "4th Year - 2nd Sem" },
+        { code: "PE-4", name: "Physical Education 4 (Team Sports)", units: 2, category: "gen_ed", status: "remaining", term: "4th Year - 2nd Sem" },
+      ];
+      setCurriculum(defaultCurriculum);
+      setLoading(false);
+      return;
+    }
+
+    // Fetch from Firestore in real-time
+    const unsubscribe = onSnapshot(
+      query(
+        collection(db, "enrollments"),
+        where("studentId", "==", profile.id)
+      ),
+      async (snapshot) => {
+        try {
+          const enrollments = snapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+          }));
+
+          // Map enrollments to curriculum courses
+          const curriculumCourses: CurriculumCourse[] = await Promise.all(
+            enrollments.map(async (enrollment: any) => ({
+              code: enrollment.courseCode || enrollment.id,
+              name: enrollment.courseName || "Course",
+              units: enrollment.units || 3,
+              category: enrollment.category || "core",
+              grade: enrollment.grade,
+              status: enrollment.status || "remaining",
+              term: enrollment.term || "Current Semester"
+            }))
+          );
+
+          setCurriculum(curriculumCourses);
+          setLoading(false);
+        } catch (error) {
+          console.error("Error loading curriculum:", error);
+          setLoading(false);
+        }
+      }
+    );
+
+    return () => unsubscribe();
+  }, [profile?.id]);
 
   // Toggle planned Remaining courses to Completed to simulate interactive planning
   const toggleCourseStatus = (code: string) => {
@@ -120,7 +175,7 @@ export function CreditChecklistView() {
     .filter((c) => c.status === "remaining")
     .reduce((acc, c) => acc + c.units, 0);
 
-  const progressPercentage = Math.round((completedUnits / totalRequiredUnits) * 100);
+  const progressPercentage = totalRequiredUnits > 0 ? Math.round((completedUnits / totalRequiredUnits) * 100) : 0;
 
   // GPA calculation (Philippine system where 1.0 is highest, 3.0 is passing, weighted by units)
   const completedCoursesWithGrades = curriculum.filter(

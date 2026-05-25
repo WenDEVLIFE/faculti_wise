@@ -389,11 +389,16 @@ export const dataImportService = {
       if (result.entity) {
         const { id, ...data } = result.entity as any;
         try {
-          await addDoc(collectionRef, {
+          // Filter out undefined values
+          const insertData = {
             ...data,
             createdAt: serverTimestamp(),
             updatedAt: serverTimestamp(),
-          });
+          };
+          Object.keys(insertData).forEach(
+            (key) => insertData[key as keyof typeof insertData] === undefined && delete insertData[key as keyof typeof insertData]
+          );
+          await addDoc(collectionRef, insertData);
         } catch (err) {
           console.error(`Failed to import row ${result.rowIndex}:`, err);
           result.success = false;

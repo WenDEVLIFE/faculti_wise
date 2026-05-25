@@ -74,6 +74,9 @@ export const coursesService = {
       ...data,
     };
 
+    // Keep mockData in sync for fallback lookups
+    (mockData.courses as any).push(newCourse);
+
     if (performingUser) {
       await auditService.logAction({
         action: 'SETTINGS_UPDATE', // Using settings update for catalog changes
@@ -102,10 +105,15 @@ export const coursesService = {
     }
 
     const courseRef = doc(db, "courses", courseId);
-    await updateDoc(courseRef, {
+    // Filter out undefined values
+    const updateData = {
       ...data,
       updatedAt: serverTimestamp(),
-    });
+    };
+    Object.keys(updateData).forEach(
+      (key) => updateData[key as keyof typeof updateData] === undefined && delete updateData[key as keyof typeof updateData]
+    );
+    await updateDoc(courseRef, updateData);
 
     if (performingUser) {
       await auditService.logAction({

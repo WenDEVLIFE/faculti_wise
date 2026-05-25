@@ -83,14 +83,20 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         // Listen to profile changes in real-time
         unsubscribeProfile = onSnapshot(userDocRef, async (userDoc) => {
           if (userDoc.exists()) {
-            setProfile(userDoc.data() as any);
+            const userData = userDoc.data() as any;
+            // Ensure displayName is populated with fallbacks
+            if (!userData.displayName) {
+              userData.displayName = user.displayName || user.email?.split('@')[0] || 'User';
+            }
+            setProfile(userData);
             setLoading(false);
           } else {
             // Initial profile for new user if it doesn't exist yet
+            const displayNameFallback = user.displayName || user.email?.split('@')[0] || 'User';
             const newProfile: UserProfile = {
               id: user.uid,
               email: user.email || '',
-              displayName: user.displayName || 'User',
+              displayName: displayNameFallback,
               photoURL: user.photoURL,
               role: 'student',
               status: 'active',

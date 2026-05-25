@@ -40,7 +40,8 @@ export function AddOfferingModal({
     if (!selectedCourse || !assignedUnits || assignedUnits <= 0) {
       return;
     }
-    onAdd(selectedCourse.id, Number(assignedUnits), notes || undefined);
+    // Only pass notes if it's not empty
+    onAdd(selectedCourse.id, Number(assignedUnits), notes.trim() || undefined);
     setSelectedCourse(null);
     setAssignedUnits("");
     setNotes("");

@@ -122,7 +122,12 @@ export const sectionsService = {
     }
 
     const sectionRef = doc(db, "sections", sectionId);
-    await updateDoc(sectionRef, data);
+    // Filter out undefined values
+    const updateData = { ...data };
+    Object.keys(updateData).forEach(
+      (key) => updateData[key as keyof typeof updateData] === undefined && delete updateData[key as keyof typeof updateData]
+    );
+    await updateDoc(sectionRef, updateData);
 
     if (performingUser) {
       await auditService.logAction({
@@ -246,7 +251,12 @@ export const termsService = {
     }
 
     const termRef = doc(db, "terms", termId);
-    await updateDoc(termRef, data);
+    // Filter out undefined values
+    const updateData = { ...data };
+    Object.keys(updateData).forEach(
+      (key) => updateData[key as keyof typeof updateData] === undefined && delete updateData[key as keyof typeof updateData]
+    );
+    await updateDoc(termRef, updateData);
 
     if (performingUser) {
       await auditService.logAction({

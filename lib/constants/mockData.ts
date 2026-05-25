@@ -12,6 +12,8 @@ export interface MockDataStore {
   schedules: any[];
   auditLogs: any[];
   terms?: any[];
+  courseOfferings?: any[];
+  institutionSettings?: any;
 }
 
 export const mockData: MockDataStore = {
