@@ -5,9 +5,11 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Building2, Calendar, Globe, Bell, Plus, AlertTriangle, Layers, Upload, CheckCircle2, BookOpen } from "lucide-react";
 import { Department } from "@/lib/types/department.types";
+import { InstitutionSettings as InstitutionSettingsType } from "@/lib/types/institution.types";
 import { Section, Term } from "@/lib/types/section-term.types";
 import { User } from "@/lib/types/firestore.types";
 import { ImportSummary } from "@/lib/types/data-import.types";
+import { institutionService } from "@/features/settings/institution.service";
 import { departmentsService } from "@/features/departments/departments.service";
 import { programsService } from "@/features/programs/programs.service";
 import { sectionsService, termsService } from "@/features/sections/sections.service";
@@ -30,6 +32,17 @@ export function InstitutionSettings() {
   const [sections, setSections] = useState<Section[]>([]);
   const [terms, setTerms] = useState<Term[]>([]);
   const [teachers, setTeachers] = useState<Record<string, User>>({});
+
+  // Institution settings state
+  const [institutionSettings, setInstitutionSettings] = useState<InstitutionSettingsType | null>(null);
+  const [institutionFormData, setInstitutionFormData] = useState({
+    institutionName: "",
+    currentAcademicYear: "",
+    systemLocale: "en-US",
+    systemNotificationsEnabled: true,
+  });
+  const [savingSettings, setSavingSettings] = useState(false);
+  const [settingsMessage, setSettingsMessage] = useState<string | null>(null);
 
   // Department modal state
   const [isDeptModalOpen, setIsDeptModalOpen] = useState(false);
@@ -62,6 +75,17 @@ export function InstitutionSettings() {
   const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
+    // Subscribe to institution settings
+    const unsubscribeSettings = institutionService.subscribeSettings((settings) => {
+      setInstitutionSettings(settings);
+      setInstitutionFormData({
+        institutionName: settings.institutionName,
+        currentAcademicYear: settings.currentAcademicYear,
+        systemLocale: settings.systemLocale,
+        systemNotificationsEnabled: settings.systemNotificationsEnabled,
+      });
+    });
+
     // Subscribe to departments
     const unsubscribeDepts = departmentsService.subscribeDepartments((data) => {
       setDepartments(data);
@@ -236,6 +260,33 @@ export function InstitutionSettings() {
     setTimeout(() => setImportSuccessMessage(null), 5000);
   };
 
+  // Institution settings handlers
+  const handleUpdateInstitutionSettings = async () => {
+    if (!profile) return;
+
+    setSavingSettings(true);
+    setSettingsMessage(null);
+
+    try {
+      await institutionService.updateSettings(
+        {
+          institutionName: institutionFormData.institutionName,
+          currentAcademicYear: institutionFormData.currentAcademicYear,
+          systemLocale: institutionFormData.systemLocale,
+          systemNotificationsEnabled: institutionFormData.systemNotificationsEnabled,
+        },
+        profile
+      );
+      setSettingsMessage("Institution settings updated successfully");
+      setTimeout(() => setSettingsMessage(null), 3000);
+    } catch (error) {
+      console.error("Failed to update institution settings:", error);
+      setSettingsMessage("Failed to save settings");
+    } finally {
+      setSavingSettings(false);
+    }
+  };
+
   const filteredSections = selectedProgramId
     ? sections.filter((s) => s.programId === selectedProgramId)
     : sections;
@@ -251,6 +302,17 @@ export function InstitutionSettings() {
           </CardTitle>
         </CardHeader>
         <CardContent className="pt-6 space-y-6">
+          {settingsMessage && (
+            <div className={`p-4 rounded-xl border flex items-center gap-2 text-sm ${
+              settingsMessage.includes("success") 
+                ? "bg-emerald-50 border-emerald-200 text-emerald-900" 
+                : "bg-red-50 border-red-200 text-red-900"
+            }`}>
+              <CheckCircle2 className="h-4 w-4 shrink-0" />
+              <span>{settingsMessage}</span>
+            </div>
+          )}
+
           <div className="grid gap-6">
             <div className="space-y-2">
               <label className="text-xs font-bold text-text-muted uppercase tracking-wider">Institution Name</label>
@@ -258,7 +320,8 @@ export function InstitutionSettings() {
                 <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-text-muted" />
                 <input 
                   type="text" 
-                  defaultValue="FacultyWise University"
+                  value={institutionFormData.institutionName}
+                  onChange={(e) => setInstitutionFormData({ ...institutionFormData, institutionName: e.target.value })}
                   className="w-full pl-10 pr-4 py-2.5 bg-white border border-border rounded-xl text-sm focus:outline-none focus:ring-4 focus:ring-primary/10 transition-all"
                 />
               </div>
@@ -269,19 +332,26 @@ export function InstitutionSettings() {
                 <label className="text-xs font-bold text-text-muted uppercase tracking-wider">Current Academic Year</label>
                 <div className="relative">
                   <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-text-muted" />
-                  <select className="w-full pl-10 pr-4 py-2.5 bg-white border border-border rounded-xl text-sm appearance-none focus:outline-none focus:ring-4 focus:ring-primary/10 transition-all">
-                    <option>2024 - 2025</option>
-                    <option>2023 - 2024</option>
-                  </select>
+                  <input 
+                    type="text" 
+                    value={institutionFormData.currentAcademicYear}
+                    onChange={(e) => setInstitutionFormData({ ...institutionFormData, currentAcademicYear: e.target.value })}
+                    placeholder="e.g., 2024-2025"
+                    className="w-full pl-10 pr-4 py-2.5 bg-white border border-border rounded-xl text-sm focus:outline-none focus:ring-4 focus:ring-primary/10 transition-all"
+                  />
                 </div>
               </div>
               <div className="space-y-2">
                 <label className="text-xs font-bold text-text-muted uppercase tracking-wider">System Locale</label>
                 <div className="relative">
                   <Globe className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-text-muted" />
-                  <select className="w-full pl-10 pr-4 py-2.5 bg-white border border-border rounded-xl text-sm appearance-none focus:outline-none focus:ring-4 focus:ring-primary/10 transition-all">
-                    <option>English (United States)</option>
-                    <option>Filipino (Philippines)</option>
+                  <select 
+                    value={institutionFormData.systemLocale}
+                    onChange={(e) => setInstitutionFormData({ ...institutionFormData, systemLocale: e.target.value })}
+                    className="w-full pl-10 pr-4 py-2.5 bg-white border border-border rounded-xl text-sm appearance-none focus:outline-none focus:ring-4 focus:ring-primary/10 transition-all"
+                  >
+                    <option value="en-US">English (United States)</option>
+                    <option value="fil-PH">Filipino (Philippines)</option>
                   </select>
                 </div>
               </div>
@@ -294,9 +364,19 @@ export function InstitutionSettings() {
                 <Bell className="h-4 w-4 text-primary" />
                 <span className="text-sm font-semibold text-text">System Notifications</span>
               </div>
-              <div className="h-5 w-10 rounded-full bg-primary relative cursor-pointer">
-                <div className="absolute right-0.5 top-0.5 h-4 w-4 rounded-full bg-white shadow-sm" />
-              </div>
+              <button
+                onClick={() => setInstitutionFormData({ 
+                  ...institutionFormData, 
+                  systemNotificationsEnabled: !institutionFormData.systemNotificationsEnabled 
+                })}
+                className={`h-5 w-10 rounded-full relative cursor-pointer transition-all ${
+                  institutionFormData.systemNotificationsEnabled ? "bg-primary" : "bg-gray-300"
+                }`}
+              >
+                <div className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow-sm transition-all ${
+                  institutionFormData.systemNotificationsEnabled ? "right-0.5" : "left-0.5"
+                }`} />
+              </button>
             </div>
             <p className="text-xs text-text-muted leading-relaxed">
               Enable automated email notifications for faculty load alerts and schedule conflicts.
@@ -304,7 +384,13 @@ export function InstitutionSettings() {
           </div>
 
           <div className="flex justify-end pt-2">
-            <Button size="sm" className="px-8 shadow-md">Update Configuration</Button>
+            <Button 
+              onClick={handleUpdateInstitutionSettings}
+              disabled={savingSettings}
+              className="px-8 shadow-md"
+            >
+              {savingSettings ? "Saving..." : "Update Configuration"}
+            </Button>
           </div>
         </CardContent>
       </Card>
