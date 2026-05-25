@@ -74,6 +74,9 @@ export const coursesService = {
       ...data,
     };
 
+    // Keep mockData in sync for fallback lookups
+    (mockData.courses as any).push(newCourse);
+
     if (performingUser) {
       await auditService.logAction({
         action: 'SETTINGS_UPDATE', // Using settings update for catalog changes

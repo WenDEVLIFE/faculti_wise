@@ -32,7 +32,8 @@ export const auditService = {
 
       const auditLogRef = collection(db, "audit_logs");
       
-      await addDoc(auditLogRef, {
+      // Filter out undefined values to avoid Firebase errors
+      const logData = {
         timestamp: serverTimestamp(),
         userId: performedBy.id,
         userName: performedBy.displayName,
@@ -44,7 +45,13 @@ export const auditService = {
         metadata: {
           userAgent: typeof window !== 'undefined' ? window.navigator.userAgent : 'server',
         }
-      });
+      };
+      // Remove undefined fields
+      Object.keys(logData).forEach(
+        (key) => logData[key as keyof typeof logData] === undefined && delete logData[key as keyof typeof logData]
+      );
+      
+      await addDoc(auditLogRef, logData);
     } catch (error) {
       console.error("Failed to log audit action:", error);
     }
