@@ -190,10 +190,15 @@ export const courseOfferingsService = {
     }
 
     const offeringRef = doc(db, "courseOfferings", offeringId);
-    await updateDoc(offeringRef, {
+    // Filter out undefined values
+    const updateData = {
       ...data,
       updatedAt: serverTimestamp(),
-    });
+    };
+    Object.keys(updateData).forEach(
+      (key) => updateData[key as keyof typeof updateData] === undefined && delete updateData[key as keyof typeof updateData]
+    );
+    await updateDoc(offeringRef, updateData);
 
     if (performingUser) {
       await auditService.logAction({

@@ -139,10 +139,15 @@ export const programsService = {
     }
 
     const programRef = doc(db, "programs", programId);
-    await updateDoc(programRef, {
+    // Filter out undefined values
+    const updateData = {
       ...data,
       updatedAt: serverTimestamp(),
-    });
+    };
+    Object.keys(updateData).forEach(
+      (key) => updateData[key as keyof typeof updateData] === undefined && delete updateData[key as keyof typeof updateData]
+    );
+    await updateDoc(programRef, updateData);
 
     if (performingUser) {
       await auditService.logAction({
