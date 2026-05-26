@@ -6,7 +6,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Section } from "@/lib/types/section-term.types";
 import { User } from "@/lib/types/firestore.types";
-import { sectionsService } from "../sections.service";
+import { sectionsService, termsService } from "../sections.service";
 
 interface AddEditSectionModalProps {
   isOpen: boolean;
@@ -40,7 +40,7 @@ export function AddEditSectionModal({
     // Load teachers
     const loadTeachers = async () => {
       try {
-        const teachersData = await sectionsService.getTeachers();
+        const teachersData = await termsService.getTeachers();
         setTeachers(teachersData);
       } catch (err) {
         console.error("Error loading teachers:", err);
