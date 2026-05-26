@@ -41,10 +41,14 @@ export const courseOfferingsService = {
     const db = getDb();
     if (!db) {
       // Sandbox/Demo Mode
-      const offeringsForTerm = (mockData.courseOfferings as any[])
-        .filter((o) => o.termId === termId)
-        .map((o) => this.enrichOfferingWithCourse(o));
-      onUpdate(offeringsForTerm);
+      (async () => {
+        const offeringsForTerm = await Promise.all(
+          (mockData.courseOfferings as any[])
+            .filter((o) => o.termId === termId)
+            .map((o) => this.enrichOfferingWithCourse(o))
+        );
+        onUpdate(offeringsForTerm);
+      })();
       return () => {};
     }
 
@@ -73,9 +77,11 @@ export const courseOfferingsService = {
   async getOfferingsByTerm(termId: string): Promise<CourseOfferingWithCourse[]> {
     const db = getDb();
     if (!db) {
-      return (mockData.courseOfferings as any[])
-        .filter((o) => o.termId === termId)
-        .map((o) => this.enrichOfferingWithCourse(o));
+      return await Promise.all(
+        (mockData.courseOfferings as any[])
+          .filter((o) => o.termId === termId)
+          .map((o) => this.enrichOfferingWithCourse(o))
+      );
     }
 
     const offeringsRef = collection(db, "courseOfferings");
@@ -126,19 +132,24 @@ export const courseOfferingsService = {
         ...data,
         createdAt: new Date(),
         updatedAt: new Date(),
-        createdBy: performingUser?.uid,
+        createdBy: performingUser?.id,
       };
       (mockData.courseOfferings as any).push(newOffering);
       return newOffering;
     }
 
     const offeringsRef = collection(db, "courseOfferings");
-    // Filter out undefined values to avoid Firebase errors
+    // Filter out undefined values from input data first
+    const filteredData: Record<string, any> = {};
+    Object.keys(data).forEach(
+      (key) => data[key as keyof typeof data] !== undefined && (filteredData[key] = data[key as keyof typeof data])
+    );
+    // Then add system fields with undefined-filtering
     const documentData = {
-      ...data,
+      ...filteredData,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
-      createdBy: performingUser?.uid,
+      createdBy: performingUser?.id,
     };
     // Remove undefined fields
     Object.keys(documentData).forEach(
@@ -151,7 +162,7 @@ export const courseOfferingsService = {
       ...data,
       createdAt: new Date(),
       updatedAt: new Date(),
-      createdBy: performingUser?.uid,
+      createdBy: performingUser?.id,
     };
 
     if (performingUser) {
@@ -178,7 +189,7 @@ export const courseOfferingsService = {
     const db = getDb();
     if (!db) {
       // Demo Mode
-      const index = (mockData.courseOfferings as any).findIndex((o) => o.id === offeringId);
+      const index = (mockData.courseOfferings as any[]).findIndex((o: any) => o.id === offeringId);
       if (index !== -1) {
         (mockData.courseOfferings as any)[index] = {
           ...(mockData.courseOfferings as any)[index],
@@ -218,7 +229,7 @@ export const courseOfferingsService = {
     const db = getDb();
     if (!db) {
       // Demo Mode
-      const index = (mockData.courseOfferings as any).findIndex((o) => o.id === offeringId);
+      const index = (mockData.courseOfferings as any[]).findIndex((o: any) => o.id === offeringId);
       if (index !== -1) {
         (mockData.courseOfferings as any).splice(index, 1);
       }
@@ -254,7 +265,7 @@ export const courseOfferingsService = {
     if (!db) {
       // Demo Mode
       draftOfferings.forEach((offering) => {
-        const index = (mockData.courseOfferings as any).findIndex((o) => o.id === offering.id);
+        const index = (mockData.courseOfferings as any[]).findIndex((o: any) => o.id === offering.id);
         if (index !== -1) {
           (mockData.courseOfferings as any)[index].status = "published";
         }
@@ -374,12 +385,12 @@ export const courseOfferingsService = {
     // Fall back to mockData if not found in Firestore
     if (!course && mockData.courses) {
       // First try exact ID match
-      course = (mockData.courses as any).find((c) => c.id === courseId);
+      course = (mockData.courses as any[]).find((c: any) => c.id === courseId);
       
       // If not found, log for debugging
       if (!course) {
         console.warn(`Course ${courseId} not found in mockData. Available courses:`, 
-          (mockData.courses as any).map((c: any) => ({ id: c.id, code: c.code, name: c.name }))
+          (mockData.courses as any[]).map((c: any) => ({ id: c.id, code: c.code, name: c.name }))
         );
       }
     }

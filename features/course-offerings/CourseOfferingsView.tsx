@@ -45,7 +45,7 @@ const AVAILABLE_TERMS: Term[] = [
 type ViewState = "default" | "publishing";
 
 export default function CourseOfferingsView() {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const [selectedTermId, setSelectedTermId] = useState(AVAILABLE_TERMS[0].id);
   const [offerings, setOfferings] = useState<CourseOfferingWithCourse[]>([]);
   const [allCourses, setAllCourses] = useState<Course[]>([]);
@@ -90,7 +90,7 @@ export default function CourseOfferingsView() {
   }, [offerings, selectedTermId]);
 
   const handleAddOffering = async (courseId: string, assignedUnits: number, notes?: string) => {
-    if (!user) return;
+    if (!profile) return;
 
     try {
       await courseOfferingsService.createOffering(
@@ -101,7 +101,7 @@ export default function CourseOfferingsView() {
           status: "draft",
           notes,
         },
-        user
+        profile
       );
       setShowAddModal(false);
       setSuccessMessage("Course offering added successfully");
@@ -112,11 +112,11 @@ export default function CourseOfferingsView() {
   };
 
   const handlePublishOfferings = async () => {
-    if (!user || stats.draft === 0) return;
+    if (!profile || stats.draft === 0) return;
 
     setViewState("publishing");
     try {
-      await courseOfferingsService.publishOfferingsForTerm(selectedTermId, user);
+      await courseOfferingsService.publishOfferingsForTerm(selectedTermId, profile);
       setViewState("default");
       setSuccessMessage(`Published ${stats.draft} course offerings`);
       setTimeout(() => setSuccessMessage(""), 3000);
@@ -127,10 +127,10 @@ export default function CourseOfferingsView() {
   };
 
   const handleDeleteOffering = async (offeringId: string) => {
-    if (!user) return;
+    if (!profile) return;
 
     try {
-      await courseOfferingsService.deleteOffering(offeringId, user);
+      await courseOfferingsService.deleteOffering(offeringId, profile);
       setSuccessMessage("Course offering removed");
       setTimeout(() => setSuccessMessage(""), 3000);
     } catch (error) {
@@ -259,7 +259,7 @@ export default function CourseOfferingsView() {
         )}
 
         {offerings.length > 0 && (
-          <Button onClick={handleExportCSV} variant="outline">
+          <Button onClick={handleExportCSV} variant="secondary">
             Export CSV
           </Button>
         )}
@@ -291,9 +291,9 @@ export default function CourseOfferingsView() {
           offerings={offerings}
           onDelete={handleDeleteOffering}
           onStatusChange={async (offeringId, newStatus) => {
-            if (!user) return;
+            if (!profile) return;
             try {
-              await courseOfferingsService.updateOffering(offeringId, { status: newStatus }, user);
+              await courseOfferingsService.updateOffering(offeringId, { status: newStatus }, profile);
             } catch (error) {
               console.error("Failed to update offering:", error);
             }

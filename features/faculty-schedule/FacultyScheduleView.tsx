@@ -9,7 +9,7 @@ import { Card, CardContent } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Calendar, User, Info } from "lucide-react";
 import { getDb } from "@/lib/firebase";
-import { collection, onSnapshot } from "firebase/firestore";
+import { collection, onSnapshot, doc, getDoc } from "firebase/firestore";
 import { mockData } from "@/lib/constants/mockData";
 
 export function FacultyScheduleView() {
@@ -76,18 +76,18 @@ export function FacultyScheduleView() {
             let teacher = null;
 
             try {
-              const courseSnap = await snapshot.query?.firestore?.doc(`courses/${s.courseId}`).get?.();
-              course = courseSnap?.data?.();
+              const courseSnap = await getDoc(doc(db, "courses", s.courseId));
+              course = courseSnap.exists() ? courseSnap.data() : null;
             } catch (e) {}
 
             try {
-              const roomSnap = await snapshot.query?.firestore?.doc(`rooms/${s.roomId}`).get?.();
-              room = roomSnap?.data?.();
+              const roomSnap = await getDoc(doc(db, "rooms", s.roomId));
+              room = roomSnap.exists() ? roomSnap.data() : null;
             } catch (e) {}
 
             try {
-              const teacherSnap = await snapshot.query?.firestore?.doc(`users/${s.teacherId}`).get?.();
-              teacher = teacherSnap?.data?.();
+              const teacherSnap = await getDoc(doc(db, "users", s.teacherId));
+              teacher = teacherSnap.exists() ? teacherSnap.data() : null;
             } catch (e) {}
 
             return {

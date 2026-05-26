@@ -33,22 +33,23 @@ export const auditService = {
       const auditLogRef = collection(db, "audit_logs");
       
       // Filter out undefined values to avoid Firebase errors
-      const logData = {
+      const logData: Record<string, any> = {
         timestamp: serverTimestamp(),
-        userId: performedBy.id,
-        userName: performedBy.displayName,
-        userEmail: performedBy.email,
         action,
         targetId,
         targetType,
-        details,
         metadata: {
           userAgent: typeof window !== 'undefined' ? window.navigator.userAgent : 'server',
         }
       };
-      // Remove undefined fields
+      // Only add optional fields if they're defined
+      if (performedBy?.id) logData.userId = performedBy.id;
+      if (performedBy?.displayName) logData.userName = performedBy.displayName;
+      if (performedBy?.email) logData.userEmail = performedBy.email;
+      if (details) logData.details = details;
+      // Remove any undefined fields as a safety measure
       Object.keys(logData).forEach(
-        (key) => logData[key as keyof typeof logData] === undefined && delete logData[key as keyof typeof logData]
+        (key) => logData[key] === undefined && delete logData[key]
       );
       
       await addDoc(auditLogRef, logData);

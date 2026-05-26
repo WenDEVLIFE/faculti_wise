@@ -149,7 +149,7 @@ export const institutionService = {
           ...data,
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp(),
-          createdBy: performingUser?.uid,
+          createdBy: performingUser?.id,
         };
         // Remove undefined fields
         Object.keys(documentData).forEach(
@@ -158,10 +158,15 @@ export const institutionService = {
         await setDoc(settingsRef, documentData);
       } else {
         // Update existing
-        await updateDoc(settingsRef, {
+        const documentData = {
           ...data,
           updatedAt: serverTimestamp(),
-        });
+        };
+        // Remove undefined fields
+        Object.keys(documentData).forEach(
+          (key) => documentData[key as keyof typeof documentData] === undefined && delete documentData[key as keyof typeof documentData]
+        );
+        await updateDoc(settingsRef, documentData);
       }
 
       // Log audit entry
