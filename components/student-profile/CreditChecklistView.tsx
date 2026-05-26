@@ -37,6 +37,7 @@ interface CurriculumCourse {
 export function CreditChecklistView() {
   const { profile } = useAuth();
   const [curriculum, setCurriculum] = useState<CurriculumCourse[]>([]);
+  const [initialCurriculum, setInitialCurriculum] = useState<CurriculumCourse[]>([]);
   const [activeYear, setActiveYear] = useState<string>("3rd Year");
   const [loading, setLoading] = useState(true);
   const [studentProgram, setStudentProgram] = useState<any>(null);
@@ -102,6 +103,7 @@ export function CreditChecklistView() {
         { code: "PE-4", name: "Physical Education 4 (Team Sports)", units: 2, category: "gen_ed", status: "remaining", term: "4th Year - 2nd Sem" },
       ];
       setCurriculum(defaultCurriculum);
+      setInitialCurriculum(defaultCurriculum);
       setLoading(false);
       return;
     }
@@ -133,6 +135,7 @@ export function CreditChecklistView() {
           );
 
           setCurriculum(curriculumCourses);
+          setInitialCurriculum(curriculumCourses);
           setLoading(false);
         } catch (error) {
           console.error("Error loading curriculum:", error);
