@@ -132,20 +132,7 @@ export const facultyLoadService = {
   ): Promise<void> {
     const db = getDb();
     if (!db) {
-      // Demo mode
-      const schedule: any = {
-        id: Math.random().toString(36).substr(2, 9),
-        teacherId,
-        courseId,
-        roomId,
-        dayOfWeek,
-        startTime,
-        endTime,
-        sectionId: sectionId || "A",
-        createdAt: new Date(),
-      };
-      if (!mockData.schedules) mockData.schedules = [];
-      mockData.schedules.push(schedule);
+      console.warn("No Firestore connection - assignment not created");
       return;
     }
 
