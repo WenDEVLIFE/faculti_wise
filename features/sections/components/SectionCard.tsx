@@ -73,11 +73,11 @@ export function SectionCard({
       )}
 
       {/* Advisor info */}
-      {section.advisorUid || advisorName ? (
+      {advisorName ? (
         <div className="flex items-center gap-2 text-xs text-text-muted">
           <span>Advisor:</span>
           <span className="font-medium text-text">
-            {advisorName || "Not assigned"}
+            {advisorName}
           </span>
         </div>
       ) : (
