@@ -103,28 +103,27 @@ export function InstitutionSettings() {
     const unsubscribeSections = sectionsService.subscribeAll((data) => {
       setSections(data);
       setLoading(false);
+      
+      // Reload teachers when sections change to ensure advisor names are available
+      const reloadTeachers = async () => {
+        try {
+          const teachersData = await departmentsService.getTeachers();
+          const teachersMap: Record<string, User> = {};
+          teachersData.forEach((teacher) => {
+            teachersMap[teacher.id] = teacher;
+          });
+          setTeachers(teachersMap);
+        } catch (err) {
+          console.error("Error loading teachers:", err);
+        }
+      };
+      reloadTeachers();
     });
 
     // Subscribe to terms
     const unsubscribeTerms = termsService.subscribeAll((data) => {
       setTerms(data);
     });
-
-    // Load teachers
-    const loadTeachers = async () => {
-      try {
-        const teachersData = await departmentsService.getTeachers();
-        const teachersMap: Record<string, User> = {};
-        teachersData.forEach((teacher) => {
-          teachersMap[teacher.id] = teacher;
-        });
-        setTeachers(teachersMap);
-      } catch (err) {
-        console.error("Error loading teachers:", err);
-      }
-    };
-
-    loadTeachers();
 
     return () => {
       unsubscribeDepts();

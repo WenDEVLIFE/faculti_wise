@@ -32,6 +32,7 @@ export function AddEditSectionModal({
 
   const [teachers, setTeachers] = useState<User[]>([]);
   const [loading, setLoading] = useState(false);
+  const [loadingTeachers, setLoadingTeachers] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -39,11 +40,15 @@ export function AddEditSectionModal({
 
     // Load teachers
     const loadTeachers = async () => {
+      setLoadingTeachers(true);
       try {
         const teachersData = await termsService.getTeachers();
         setTeachers(teachersData);
       } catch (err) {
         console.error("Error loading teachers:", err);
+        setError("Failed to load teacher list");
+      } finally {
+        setLoadingTeachers(false);
       }
     };
 
@@ -197,15 +202,21 @@ export function AddEditSectionModal({
               <select
                 value={advisorUid}
                 onChange={(e) => setAdvisorUid(e.target.value)}
-                className="w-full h-10 px-3 bg-surface-alt border border-border rounded-lg outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm appearance-none cursor-pointer"
+                disabled={loadingTeachers}
+                className="w-full h-10 px-3 bg-surface-alt border border-border rounded-lg outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm appearance-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <option value="">-- Select a teacher --</option>
+                <option value="">
+                  {loadingTeachers ? "Loading teachers..." : "-- Select a teacher --"}
+                </option>
                 {teachers.map((teacher) => (
                   <option key={teacher.id} value={teacher.id}>
                     {teacher.displayName}
                   </option>
                 ))}
               </select>
+              {loadingTeachers && (
+                <p className="text-xs text-text-muted">Loading available teachers...</p>
+              )}
             </div>
 
             <div className="pt-3 border-t border-border/50 space-y-2">
