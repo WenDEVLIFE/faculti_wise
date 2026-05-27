@@ -9,76 +9,20 @@ import {
   Unsubscribe,
 } from "firebase/firestore";
 import { getDb } from "@/lib/firebase";
-import { mockData } from "@/lib/constants/mockData";
 import { FacultyMember, LoadAssignment } from "@/lib/types/faculty-load.types";
 
 export const facultyLoadService = {
   /**
-   * Subscribe to real-time faculty load data
+   * Subscribe to real-time faculty load data from Firebase
    * Calculates total units from schedules and determines load status
    */
   subscribeFacultyLoad(onUpdate: (faculty: FacultyMember[]) => void): () => void {
     const db = getDb();
 
     if (!db) {
-      // Demo/Sandbox mode - return mock data
-      const calculateMockLoad = () => {
-        const facultyMap = new Map<string, FacultyMember>();
-
-        // Get all unique teachers from schedules
-        mockData.schedules?.forEach((schedule: any) => {
-          const teacher = mockData.users.find((u: any) => u.id === schedule.teacherId);
-          if (teacher?.role === "teacher") {
-            if (!facultyMap.has(teacher.id)) {
-              const targetUnits = 18; // Default target
-              facultyMap.set(teacher.id, {
-                id: teacher.id,
-                name: teacher.displayName,
-                department: mockData.departments.find(
-                  (d: any) => d.id === teacher.departmentId
-                )?.name || "Unknown",
-                designation: "Faculty",
-                totalUnits: 0,
-                targetUnits,
-                status: "normal",
-                assignments: [],
-              });
-            }
-          }
-        });
-
-        // Calculate units from schedules
-        mockData.schedules?.forEach((schedule: any) => {
-          const faculty = facultyMap.get(schedule.teacherId);
-          if (faculty) {
-            const course = mockData.courses.find((c: any) => c.id === schedule.courseId);
-            if (course) {
-              faculty.totalUnits += course.units || 3;
-              faculty.assignments.push({
-                courseCode: course.code || "",
-                courseName: course.name,
-                units: course.units || 3,
-                section: schedule.sectionId || "A",
-              });
-            }
-          }
-        });
-
-        // Determine load status
-        facultyMap.forEach((faculty) => {
-          if (faculty.totalUnits > faculty.targetUnits + 3) {
-            faculty.status = "overloaded";
-          } else if (faculty.totalUnits < faculty.targetUnits - 3) {
-            faculty.status = "underloaded";
-          } else {
-            faculty.status = "normal";
-          }
-        });
-
-        onUpdate(Array.from(facultyMap.values()));
-      };
-
-      calculateMockLoad();
+      // Demo/Sandbox mode - return empty array (no fallback to mockData)
+      console.warn("No Firestore connection available");
+      onUpdate([]);
       return () => {};
     }
 
@@ -120,11 +64,11 @@ export const facultyLoadService = {
           // Calculate faculty load
           const facultyMap = new Map<string, FacultyMember>();
 
-          teachers.forEach((teacher: any) => {
+          (teachers as any[]).forEach((teacher) => {
             const targetUnits = 18; // Default target
             facultyMap.set(teacher.id, {
               id: teacher.id,
-              name: teacher.displayName,
+              name: teacher.displayName || teacher.email || "Unknown",
               department: deptsMap.get(teacher.departmentId)?.name || "Unknown",
               designation: teacher.designation || "Faculty",
               totalUnits: 0,
@@ -166,6 +110,7 @@ export const facultyLoadService = {
           onUpdate(Array.from(facultyMap.values()));
         } catch (err) {
           console.error("Error calculating faculty load:", err);
+          onUpdate([]);
         }
       }
     );
@@ -268,5 +213,83 @@ export const facultyLoadService = {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+  },
+
+  /**
+   * Get all teachers from Firebase (no mockData fallback)
+   */
+  async getTeachers(): Promise<any[]> {
+    const db = getDb();
+    
+    try {
+      if (!db) {
+        console.warn("No Firestore connection - no teachers available");
+        return [];
+      }
+
+      const usersRef = collection(db, "users");
+      const q = query(usersRef, where("role", "==", "teacher"));
+      const querySnapshot = await getDocs(q);
+      return querySnapshot.docs.map((doc) => ({
+        id: doc.id,
+        displayName: doc.data().displayName || doc.data().email || "Unknown Teacher",
+        ...doc.data(),
+      }));
+    } catch (err) {
+      console.error("Error fetching teachers:", err);
+      return [];
+    }
+  },
+
+  /**
+   * Get all courses from Firebase (no mockData fallback)
+   */
+  async getCourses(): Promise<any[]> {
+    const db = getDb();
+    
+    try {
+      if (!db) {
+        console.warn("No Firestore connection - no courses available");
+        return [];
+      }
+
+      const coursesRef = collection(db, "courses");
+      const querySnapshot = await getDocs(coursesRef);
+      return querySnapshot.docs.map((doc) => ({
+        id: doc.id,
+        code: doc.data().code || "",
+        name: doc.data().name || "Unknown Course",
+        ...doc.data(),
+      }));
+    } catch (err) {
+      console.error("Error fetching courses:", err);
+      return [];
+    }
+  },
+
+  /**
+   * Get all rooms from Firebase (no mockData fallback)
+   */
+  async getRooms(): Promise<any[]> {
+    const db = getDb();
+    
+    try {
+      if (!db) {
+        console.warn("No Firestore connection - no rooms available");
+        return [];
+      }
+
+      const roomsRef = collection(db, "rooms");
+      const querySnapshot = await getDocs(roomsRef);
+      return querySnapshot.docs.map((doc) => ({
+        id: doc.id,
+        name: doc.data().name || "Unknown Room",
+        building: doc.data().building || "",
+        ...doc.data(),
+      }));
+    } catch (err) {
+      console.error("Error fetching rooms:", err);
+      return [];
+    }
   },
 };

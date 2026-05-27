@@ -5,9 +5,6 @@ import { X, BookOpen, User, Calendar, Clock, Home } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { facultyLoadService } from "../faculty-load.service";
-import { mockData } from "@/lib/constants/mockData";
-import { getDb } from "@/lib/firebase";
-import { collection, getDocs } from "firebase/firestore";
 
 interface NewAssignmentModalProps {
   isOpen: boolean;
@@ -35,23 +32,16 @@ export function NewAssignmentModal({ isOpen, onClose, onSuccess }: NewAssignment
 
     const loadData = async () => {
       try {
-        const db = getDb();
-        if (!db) {
-          // Demo mode
-          setTeachers(mockData.users.filter((u: any) => u.role === "teacher"));
-          setCourses(mockData.courses || []);
-          setRooms(mockData.rooms || []);
-          return;
-        }
+        // Use the services to get real data from Firebase
+        const [teachersData, coursesData, roomsData] = await Promise.all([
+          facultyLoadService.getTeachers?.() || (async () => [])(),
+          facultyLoadService.getCourses?.() || (async () => [])(),
+          facultyLoadService.getRooms?.() || (async () => [])(),
+        ]);
 
-        // Firebase
-        const teachersSnapshot = await getDocs(
-          new URL("", "") as any // Would be proper firebase query
-        );
-        // For now, use mock data
-        setTeachers(mockData.users.filter((u: any) => u.role === "teacher"));
-        setCourses(mockData.courses || []);
-        setRooms(mockData.rooms || []);
+        setTeachers(teachersData || []);
+        setCourses(coursesData || []);
+        setRooms(roomsData || []);
       } catch (err) {
         console.error("Error loading assignment data:", err);
         setError("Failed to load data");
