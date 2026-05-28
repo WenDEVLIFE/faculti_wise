@@ -10,6 +10,7 @@ import {
 } from "firebase/firestore";
 import { getDb } from "@/lib/firebase";
 import { AuditLog, AuditAction, User } from "@/lib/types/firestore.types";
+import { mockData } from "@/lib/constants/mockData";
 
 export const auditService = {
   /**
@@ -27,7 +28,21 @@ export const auditService = {
     try {
       const db = getDb();
       if (!db) {
-        throw new Error("Firestore not initialized");
+        // Sandbox fallback
+        const newLog = {
+          id: `log-${Date.now()}`,
+          actorUid: performedBy?.id || "unknown",
+          action,
+          resourceType: targetType,
+          resourceId: targetId,
+          metadata: details || {},
+          createdAt: new Date()
+        };
+        if (!mockData.auditLogs) {
+          mockData.auditLogs = [];
+        }
+        mockData.auditLogs.unshift(newLog);
+        return;
       }
 
       const auditLogRef = collection(db, "audit_logs");
@@ -64,7 +79,24 @@ export const auditService = {
   async fetchLogs(maxCount: number = 100): Promise<AuditLog[]> {
     const db = getDb();
     if (!db) {
-      throw new Error("Firestore not initialized");
+      // Sandbox fallback
+      const logs = (mockData.auditLogs || [])
+        .slice(0, maxCount)
+        .map(log => {
+          const user = mockData.users?.find(u => u.id === log.actorUid || u.uid === log.actorUid);
+          return {
+            id: log.id,
+            timestamp: log.createdAt,
+            userId: log.actorUid,
+            userName: user?.displayName || "System",
+            userEmail: user?.email || "",
+            action: log.action as AuditAction,
+            targetId: log.resourceId || "",
+            targetType: log.resourceType || "",
+            details: log.metadata || {},
+          } as AuditLog;
+        });
+      return logs;
     }
 
     const logsRef = collection(db, "audit_logs");
@@ -83,7 +115,30 @@ export const auditService = {
   subscribeToLogs(onUpdate: (logs: AuditLog[]) => void, maxCount: number = 50): () => void {
     const db = getDb();
     if (!db) {
-      throw new Error("Firestore not initialized");
+      // Sandbox fallback
+      const triggerUpdate = () => {
+        const logs = (mockData.auditLogs || [])
+          .slice(0, maxCount)
+          .map(log => {
+            const user = mockData.users?.find(u => u.id === log.actorUid || u.uid === log.actorUid);
+            return {
+              id: log.id,
+              timestamp: log.createdAt,
+              userId: log.actorUid,
+              userName: user?.displayName || "System",
+              userEmail: user?.email || "",
+              action: log.action as AuditAction,
+              targetId: log.resourceId || "",
+              targetType: log.resourceType || "",
+              details: log.metadata || {},
+            } as AuditLog;
+          });
+        onUpdate(logs);
+      };
+
+      triggerUpdate();
+      const interval = setInterval(triggerUpdate, 1500);
+      return () => clearInterval(interval);
     }
 
     const logsRef = collection(db, "audit_logs");

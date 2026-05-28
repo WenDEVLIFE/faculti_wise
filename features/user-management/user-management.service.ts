@@ -46,7 +46,16 @@ export const userManagementService = {
   async fetchUsers(): Promise<User[]> {
     const db = getDb();
     if (!db) {
-      throw new Error("Firestore not initialized");
+      // Sandbox fallback
+      const sortedUsers = [...mockData.users]
+        .sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime())
+        .map(u => ({
+          ...u,
+          id: u.id || u.uid,
+          displayName: u.displayName || u.name || "Unknown User",
+          email: u.email || "",
+        } as User));
+      return sortedUsers;
     }
 
     const usersRef = collection(db, "users");
@@ -67,7 +76,22 @@ export const userManagementService = {
   subscribeUsers(onUpdate: (users: User[]) => void): () => void {
     const db = getDb();
     if (!db) {
-      throw new Error("Firestore not initialized");
+      // Sandbox fallback
+      const triggerUpdate = () => {
+        const sortedUsers = [...mockData.users]
+          .sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime())
+          .map(u => ({
+            ...u,
+            id: u.id || u.uid,
+            displayName: u.displayName || u.name || "Unknown User",
+            email: u.email || "",
+          } as User));
+        onUpdate(sortedUsers);
+      };
+
+      triggerUpdate();
+      const interval = setInterval(triggerUpdate, 1500);
+      return () => clearInterval(interval);
     }
 
     const usersRef = collection(db, "users");
@@ -103,6 +127,62 @@ export const userManagementService = {
       throw new Error("A valid email address is required.");
     }
 
+    const db = getDb();
+    if (!db) {
+      // Sandbox fallback
+      const newUser: User = {
+        id: `user-${Date.now()}`,
+        email: data.email,
+        displayName: data.displayName,
+        role: data.role,
+        status: 'active',
+        departmentId: data.departmentId || null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+      
+      mockData.users.unshift(newUser);
+
+      if (data.role === 'teacher') {
+        mockData.teachers.push({
+          id: `teacher-${Date.now()}`,
+          uid: newUser.id,
+          employeeNo: `EMP-2026-${Math.floor(100 + Math.random() * 900)}`,
+          fullName: data.displayName,
+          departmentId: data.departmentId || "",
+          designation: "Assistant Professor",
+          employmentType: "Full-time",
+          specialization: "",
+          officeLocation: "",
+          targetUnits: 15,
+        });
+      } else if (data.role === 'student') {
+        mockData.students.push({
+          id: `student-${Date.now()}`,
+          uid: newUser.id,
+          studentNo: `STUD-2026-${Math.floor(1000 + Math.random() * 9000)}`,
+          fullName: data.displayName,
+          programId: "bscs",
+          sectionId: "section-bscs-3a",
+          yearLevel: 1,
+          major: "",
+          gpa: 4.0,
+        });
+      }
+
+      if (performingUser) {
+        await auditService.logAction({
+          action: 'USER_CREATE',
+          targetId: newUser.id,
+          targetType: 'user',
+          details: { role: newUser.role, email: newUser.email },
+          performedBy: performingUser
+        });
+      }
+
+      return newUser;
+    }
+
     const secondaryAuth = getSecondaryAuth();
     
     try {
@@ -129,10 +209,6 @@ export const userManagementService = {
         updatedAt: serverTimestamp(),
       };
 
-      const db = getDb();
-      if (!db) {
-        throw new Error("Firestore not initialized");
-      }
       await setDoc(doc(db, "users", fbUser.uid), newUser);
 
       // 5. Sign out from secondary auth
@@ -162,11 +238,32 @@ export const userManagementService = {
   },
 
   async deleteUser(userId: string, performingUser?: User): Promise<void> {
-    // Note: This only deletes from Firestore. 
-    // Deleting from Auth requires Admin SDK or the user being logged in.
     const db = getDb();
     if (!db) {
-      throw new Error("Firestore not initialized");
+      // Sandbox fallback
+      const userIndex = mockData.users.findIndex(u => u.id === userId || u.uid === userId);
+      if (userIndex !== -1) {
+        mockData.users.splice(userIndex, 1);
+      }
+      const teacherIndex = mockData.teachers.findIndex(t => t.uid === userId);
+      if (teacherIndex !== -1) {
+        mockData.teachers.splice(teacherIndex, 1);
+      }
+      const studentIndex = mockData.students.findIndex(s => s.uid === userId);
+      if (studentIndex !== -1) {
+        mockData.students.splice(studentIndex, 1);
+      }
+
+      if (performingUser) {
+        await auditService.logAction({
+          action: 'USER_DELETE',
+          targetId: userId,
+          targetType: 'user',
+          details: { },
+          performedBy: performingUser
+        });
+      }
+      return;
     }
 
     await deleteDoc(doc(db, "users", userId));
@@ -185,7 +282,22 @@ export const userManagementService = {
   async updateUserStatus(userId: string, status: 'active' | 'inactive', performingUser?: User): Promise<void> {
     const db = getDb();
     if (!db) {
-      throw new Error("Firestore not initialized");
+      // Sandbox fallback
+      const user = mockData.users.find(u => u.id === userId || u.uid === userId);
+      if (user) {
+        user.status = status;
+        user.updatedAt = new Date();
+      }
+      if (performingUser) {
+        await auditService.logAction({
+          action: 'USER_STATUS_CHANGE',
+          targetId: userId,
+          targetType: 'user',
+          details: { status },
+          performedBy: performingUser
+        });
+      }
+      return;
     }
 
     await updateDoc(doc(db, "users", userId), {
@@ -207,7 +319,22 @@ export const userManagementService = {
   async updateUserRole(userId: string, role: 'admin' | 'teacher' | 'student', performingUser?: User): Promise<void> {
     const db = getDb();
     if (!db) {
-      throw new Error("Firestore not initialized");
+      // Sandbox fallback
+      const user = mockData.users.find(u => u.id === userId || u.uid === userId);
+      if (user) {
+        user.role = role;
+        user.updatedAt = new Date();
+      }
+      if (performingUser) {
+        await auditService.logAction({
+          action: 'USER_ROLE_CHANGE',
+          targetId: userId,
+          targetType: 'user',
+          details: { role },
+          performedBy: performingUser
+        });
+      }
+      return;
     }
 
     await updateDoc(doc(db, "users", userId), {
