@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import { MessageSquare, X, Send, Sparkles, AlertCircle } from "lucide-react";
 import { useAuth } from "@/lib/context/AuthContext";
 import { useFirestoreCollection } from "@/lib/hooks/useFirestore";
+import { encryptPayload, decryptPayload } from "@/lib/security";
 
 interface Message {
   role: "user" | "assistant";
@@ -52,33 +53,6 @@ export function AiChatDrawer() {
     scrollToBottom();
   }, [messages, loading]);
 
-  // Enriches the user prompt with automatic schedule data context
-  const getContextualPrompt = (userQuery: string) => {
-    if (!profile) return userQuery;
-
-    // Filter schedules for the current teacher/student
-    const mySchedules = schedules.filter((s: any) => {
-      if (profile.role === "teacher") return s.teacherId === profile.id;
-      return true; // Default or show all
-    });
-
-    const enrichedSchedules = mySchedules
-      .map((s: any) => {
-        const course = courses.find((c: any) => c.id === s.courseId) as any;
-        const room = rooms.find((r: any) => r.id === s.roomId) as any;
-        return `- Course: ${course?.name || s.courseId} (${s.courseId}), Day: ${s.dayOfWeek}, Time: ${s.startTime}-${s.endTime}, Room: ${room?.name || s.roomId} (${room?.building || "University Main"})`;
-      })
-      .join("\n");
-
-    return `Context: Active User is ${profile.displayName} (Role: ${profile.role}, Email: ${profile.email}, Department: ${profile.departmentId || "Computer Science"}).
-Their active schedule contains the following details:
-${enrichedSchedules || "No active schedules assigned."}
-
-User Question: ${userQuery}
-
-Instruction: Answer the User Question in a highly professional, helpful manner. Utilize their schedule context naturally so they do NOT need to repeat it. Limit your output to a concise, structured response. Do NOT use raw markdown bullet asterisks (* or **) in your text. Instead, write clear paragraphs or numbered points.`;
-  };
-
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!input.trim() || loading) return;
@@ -90,28 +64,57 @@ Instruction: Answer the User Question in a highly professional, helpful manner. 
     setLoading(true);
 
     try {
-      const fullQuery = getContextualPrompt(userMessage);
+      // Package all query context securely to send for server-side prompt construction
+      const rawPayload = {
+        userQuery: userMessage,
+        profile,
+        schedules,
+        courses,
+        rooms
+      };
+
+      // Encrypt the payload to hexadecimal binary-like string
+      const encryptedPayload = encryptPayload(rawPayload);
 
       const response = await fetch("/api/ai-test", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ question: fullQuery }),
+        body: JSON.stringify({ data: encryptedPayload }),
       });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || `Server responded with status ${response.status}`);
+        const errorBody = await response.json().catch(() => ({}));
+        // If server sent encrypted error, decrypt it, otherwise show raw
+        let displayError = errorBody.error || `Server responded with status ${response.status}`;
+        if (errorBody.data) {
+          try {
+            const decryptedErr = decryptPayload(errorBody.data);
+            displayError = decryptedErr.error || displayError;
+          } catch {}
+        }
+        throw new Error(displayError);
       }
 
-      const data = await response.json();
+      const resBody = await response.json();
+      if (!resBody.data) {
+        throw new Error("Invalid response format received from server");
+      }
+
+      // Decrypt response payload
+      const decryptedResult = decryptPayload(resBody.data);
+
+      if (decryptedResult.error) {
+        throw new Error(decryptedResult.error);
+      }
+
       setMessages((prev) => [
         ...prev,
         {
           role: "assistant",
-          content: data.answer,
-          creditsUsed: data.credits_used,
+          content: decryptedResult.answer,
+          creditsUsed: decryptedResult.credits_used,
         },
       ]);
     } catch (err: any) {
