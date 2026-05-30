@@ -32,8 +32,8 @@ export function FacultyLoadTable({ faculty, onSelect }: FacultyLoadTableProps) {
         </thead>
         <tbody className="divide-y divide-border">
           {faculty.map((member) => (
-            <tr 
-              key={member.id} 
+            <tr
+              key={member.id}
               className="hover:bg-primary/5 transition-colors group cursor-pointer"
               onClick={() => onSelect(member)}
             >
@@ -59,9 +59,9 @@ export function FacultyLoadTable({ faculty, onSelect }: FacultyLoadTableProps) {
               </td>
               <td className="px-6 py-4 text-right" onClick={(e) => e.stopPropagation()}>
                 <div className="flex justify-end gap-2">
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
+                  <Button
+                    variant="ghost"
+                    size="sm"
                     className="h-8 w-8 p-0 hover:bg-primary/10 hover:text-primary rounded-lg"
                     onClick={() => onSelect(member)}
                   >
