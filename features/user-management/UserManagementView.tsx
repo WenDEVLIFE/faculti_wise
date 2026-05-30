@@ -14,7 +14,8 @@ import {
   Mail,
   Calendar,
   CheckCircle2,
-  XCircle
+  XCircle,
+  ExternalLink
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
@@ -22,6 +23,9 @@ import { Badge } from "@/components/ui/Badge";
 import { AddUserModal } from "./components/AddUserModal";
 import { userManagementService } from "./user-management.service";
 import { User } from "@/lib/types/firestore.types";
+import { FacultyMember } from "@/lib/types/faculty-load.types";
+import { FacultyProfileDrawer } from "@/features/faculty-load/components/FacultyProfileDrawer";
+import { facultyLoadService } from "@/features/faculty-load/faculty-load.service";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/context/AuthContext";
 import { getDb } from "@/lib/firebase";
@@ -50,6 +54,33 @@ export default function UserManagementView() {
   const [students, setStudents] = useState<any[]>([]);
   const [programs, setPrograms] = useState<any[]>([]);
   const [sections, setSections] = useState<any[]>([]);
+
+  // Faculty Profile Drawer states
+  const [facultyMembers, setFacultyMembers] = useState<FacultyMember[]>([]);
+  const [selectedTeacher, setSelectedTeacher] = useState<FacultyMember | null>(null);
+  const [isProfileDrawerOpen, setIsProfileDrawerOpen] = useState(false);
+
+  // Subscribe to faculty load for dynamic profiles
+  useEffect(() => {
+    const unsubscribe = facultyLoadService.subscribeFacultyLoad((data) => {
+      setFacultyMembers(data);
+      
+      // Update selected teacher to reflect dynamic saves instantly
+      if (selectedTeacher) {
+        const updated = data.find(f => f.id === selectedTeacher.id);
+        if (updated) setSelectedTeacher(updated);
+      }
+    });
+    return () => unsubscribe();
+  }, [selectedTeacher]);
+
+  const handleViewTeacherProfile = (userId: string) => {
+    const member = facultyMembers.find(f => f.id === userId);
+    if (member) {
+      setSelectedTeacher(member);
+      setIsProfileDrawerOpen(true);
+    }
+  };
 
   useEffect(() => {
     setLoading(true);
@@ -306,8 +337,20 @@ export default function UserManagementView() {
                       ? user.createdAt.toDate().toLocaleDateString() 
                       : 'Recent';
 
+                    const isTeacher = user.role === 'teacher';
                     return (
-                      <tr key={user.id} className="group hover:bg-surface-alt/30 transition-colors">
+                      <tr 
+                        key={user.id} 
+                        className={cn(
+                          "group hover:bg-surface-alt/30 transition-colors",
+                          isTeacher && "cursor-pointer animate-in duration-200"
+                        )}
+                        onClick={() => {
+                          if (isTeacher) {
+                            handleViewTeacherProfile(user.id);
+                          }
+                        }}
+                      >
                         {/* CASE 1: ALL USER DIRECTORY VIEW */}
                         {activeTab === 'all' && (
                           <>
@@ -505,6 +548,19 @@ export default function UserManagementView() {
                         {/* Standard Actions Column (shared) */}
                         <td className="px-8 py-4 text-right">
                           <div className="flex items-center justify-end gap-2" onClick={(e) => e.stopPropagation()}>
+                            {user.role === 'teacher' && (
+                              <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                className="h-8 w-8 text-primary hover:bg-primary/10 hover:text-primary rounded-xl"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleViewTeacherProfile(user.id);
+                                }}
+                              >
+                                <ExternalLink className="h-4 w-4" />
+                              </Button>
+                            )}
                             <Button 
                               variant="secondary" 
                               size="sm" 
@@ -536,6 +592,12 @@ export default function UserManagementView() {
       <AddUserModal 
         isOpen={isModalOpen} 
         onClose={() => setIsModalOpen(false)} 
+      />
+
+      <FacultyProfileDrawer
+        isOpen={isProfileDrawerOpen}
+        onClose={() => setIsProfileDrawerOpen(false)}
+        facultyMember={selectedTeacher}
       />
     </div>
   );
