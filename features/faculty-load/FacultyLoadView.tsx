@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { FacultyLoadTable } from "./components/FacultyLoadTable";
 import { FacultyLoadStats } from "./components/FacultyLoadStats";
 import { NewAssignmentModal } from "./components/NewAssignmentModal";
+import { FacultyProfileDrawer } from "./components/FacultyProfileDrawer";
 import { FacultyMember } from "@/lib/types/faculty-load.types";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -15,6 +16,9 @@ export function FacultyLoadView() {
   const [selectedDepartment, setSelectedDepartment] = useState("All");
   const [isAssignmentModalOpen, setIsAssignmentModalOpen] = useState(false);
   const [departments, setDepartments] = useState<string[]>([]);
+  
+  const [selectedMember, setSelectedMember] = useState<FacultyMember | null>(null);
+  const [isProfileDrawerOpen, setIsProfileDrawerOpen] = useState(false);
 
   useEffect(() => {
     // Subscribe to real-time faculty load updates
@@ -25,10 +29,16 @@ export function FacultyLoadView() {
       // Extract unique departments
       const depts = Array.from(new Set(data.map((f) => f.department))).sort();
       setDepartments(depts);
+      
+      // Update selected member if it exists in the new dataset to reflect live edits
+      if (selectedMember) {
+        const updated = data.find(f => f.id === selectedMember.id);
+        if (updated) setSelectedMember(updated);
+      }
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [selectedMember]);
 
   // Filter faculty based on selected department
   useEffect(() => {
@@ -125,7 +135,13 @@ export function FacultyLoadView() {
                   <p>No faculty members found for the selected department.</p>
                 </div>
               ) : (
-                <FacultyLoadTable faculty={filteredFaculty} />
+                <FacultyLoadTable 
+                  faculty={filteredFaculty} 
+                  onSelect={(member) => {
+                    setSelectedMember(member);
+                    setIsProfileDrawerOpen(true);
+                  }}
+                />
               )}
             </CardContent>
           </Card>
@@ -136,6 +152,12 @@ export function FacultyLoadView() {
         isOpen={isAssignmentModalOpen}
         onClose={() => setIsAssignmentModalOpen(false)}
         onSuccess={handleAssignmentSuccess}
+      />
+
+      <FacultyProfileDrawer
+        isOpen={isProfileDrawerOpen}
+        onClose={() => setIsProfileDrawerOpen(false)}
+        facultyMember={selectedMember}
       />
     </div>
   );
