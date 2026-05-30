@@ -3,7 +3,6 @@
 import React from "react";
 import { useSearchParams } from "react-router-dom";
 import { StudentScheduleView } from "@/components/student-profile/StudentScheduleView";
-import { CreditChecklistView } from "@/components/student-profile/CreditChecklistView";
 import FacultyScheduleView from "@/features/faculty-schedule/FacultyScheduleView";
 import DepartmentScheduleView from "@/features/department-schedule/DepartmentScheduleView";
 import SettingsView from "@/features/settings/SettingsView";
@@ -15,8 +14,6 @@ export function StudentDashboardView() {
   switch (tab) {
     case "schedule":
       return <StudentScheduleView />;
-    case "checklist":
-      return <CreditChecklistView />;
     case "department-schedule":
       return <DepartmentScheduleView />;
     case "settings":

@@ -15,7 +15,9 @@ import {
   History as HistoryIcon,
   ListChecks,
   School,
-  X
+  X,
+  Shield,
+  UserCheck
 } from "lucide-react";
 import { useAuth } from "@/lib/context/AuthContext";
 
@@ -27,7 +29,9 @@ const navigation = [
   { name: "Course Offerings", tab: "offerings", href: "/dashboard?tab=offerings", icon: ListChecks },
   { name: "Departments", tab: "departments", href: "/dashboard?tab=departments", icon: Building2 },
   { name: "Rooms & Labs", tab: "rooms", href: "/dashboard?tab=rooms", icon: School },
-  { name: "Users", tab: "users", href: "/dashboard?tab=users", icon: Users },
+  { name: "Administrators", tab: "users-admin", href: "/dashboard?tab=users&sub=admin", icon: Shield },
+  { name: "Faculty", tab: "users-teacher", href: "/dashboard?tab=users&sub=teacher", icon: UserCheck },
+  { name: "Students", tab: "users-student", href: "/dashboard?tab=users&sub=student", icon: GraduationCap },
   { name: "Audit Logs", tab: "audit", href: "/dashboard?tab=audit", icon: HistoryIcon },
   { name: "Settings", tab: "settings", href: "/dashboard?tab=settings", icon: Settings },
 ];
@@ -72,7 +76,10 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
       <div className="flex flex-1 flex-col overflow-y-auto px-4 py-6">
         <nav className="flex flex-1 flex-col gap-1">
           {navigation.map((item) => {
-            const isActive = activeTab === item.tab;
+            const currentSub = searchParams.get("sub") || "all";
+            const isActive = item.tab.startsWith("users-")
+              ? activeTab === "users" && item.tab === `users-${currentSub}`
+              : activeTab === item.tab;
             return (
               <Link
                 key={item.name}

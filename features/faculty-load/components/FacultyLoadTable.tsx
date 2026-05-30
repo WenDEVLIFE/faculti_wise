@@ -8,6 +8,7 @@ import { MoreHorizontal, ExternalLink } from "lucide-react";
 
 interface FacultyLoadTableProps {
   faculty: FacultyMember[];
+  onSelect: (member: FacultyMember) => void;
 }
 
 const statusConfig: Record<LoadStatus, { label: string; className: string }> = {
@@ -16,7 +17,7 @@ const statusConfig: Record<LoadStatus, { label: string; className: string }> = {
   overloaded: { label: "Overloaded", className: "bg-rose-100 text-rose-700 border-rose-200" },
 };
 
-export function FacultyLoadTable({ faculty }: FacultyLoadTableProps) {
+export function FacultyLoadTable({ faculty, onSelect }: FacultyLoadTableProps) {
   return (
     <div className="overflow-x-auto">
       <table className="w-full text-left border-collapse">
@@ -31,7 +32,11 @@ export function FacultyLoadTable({ faculty }: FacultyLoadTableProps) {
         </thead>
         <tbody className="divide-y divide-border">
           {faculty.map((member) => (
-            <tr key={member.id} className="hover:bg-primary/5 transition-colors group">
+            <tr
+              key={member.id}
+              className="hover:bg-primary/5 transition-colors group cursor-pointer"
+              onClick={() => onSelect(member)}
+            >
               <td className="px-6 py-4">
                 <div>
                   <p className="font-semibold text-text group-hover:text-primary transition-colors">{member.name}</p>
@@ -52,12 +57,17 @@ export function FacultyLoadTable({ faculty }: FacultyLoadTableProps) {
                   {statusConfig[member.status].label}
                 </Badge>
               </td>
-              <td className="px-6 py-4 text-right">
+              <td className="px-6 py-4 text-right" onClick={(e) => e.stopPropagation()}>
                 <div className="flex justify-end gap-2">
-                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 w-8 p-0 hover:bg-primary/10 hover:text-primary rounded-lg"
+                    onClick={() => onSelect(member)}
+                  >
                     <ExternalLink className="h-4 w-4" />
                   </Button>
-                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0 rounded-lg">
                     <MoreHorizontal className="h-4 w-4" />
                   </Button>
                 </div>

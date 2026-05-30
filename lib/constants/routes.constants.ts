@@ -21,5 +21,4 @@ export const appRoutes = {
   studentSchedule: "/student/schedule",
   studentDepartmentSchedule: "/student/department-schedule",
   studentSettings: "/student/settings",
-  studentChecklist: "/student/checklist",
 } as const;

@@ -9,7 +9,6 @@ import {
   Building2,
   User,
   GraduationCap,
-  ClipboardList,
   X
 } from "lucide-react";
 
@@ -17,7 +16,6 @@ const navigation = [
   { name: "Faculty Search", tab: "faculty-search", href: "/student", icon: Calendar },
   { name: "My Class Schedule", tab: "schedule", href: "/student?tab=schedule", icon: LayoutDashboard },
   { name: "Department Schedule", tab: "department-schedule", href: "/student?tab=department-schedule", icon: Building2 },
-  { name: "Credit Checklist", tab: "checklist", href: "/student?tab=checklist", icon: ClipboardList },
   { name: "Settings", tab: "settings", href: "/student?tab=settings", icon: User },
 ];
 

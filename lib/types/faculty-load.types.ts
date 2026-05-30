@@ -16,6 +16,17 @@ export interface FacultyMember {
   targetUnits: number;
   status: LoadStatus;
   assignments: LoadAssignment[];
+  
+  // Detailed Faculty Profile properties
+  specialization?: string;
+  major?: string;
+  certifications?: string[];
+  skills?: string[];
+  teachingExperience?: string;
+  eligibleSubjects?: string[];
+  employeeNo?: string;
+  employmentType?: string;
+  officeLocation?: string;
 }
 
 export interface FacultyLoadSummary {

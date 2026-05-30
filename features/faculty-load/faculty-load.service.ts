@@ -10,6 +10,7 @@ import {
 } from "firebase/firestore";
 import { getDb } from "@/lib/firebase";
 import { FacultyMember, LoadAssignment } from "@/lib/types/faculty-load.types";
+import { mockData } from "@/lib/constants/mockData";
 
 export const facultyLoadService = {
   /**
@@ -20,10 +21,85 @@ export const facultyLoadService = {
     const db = getDb();
 
     if (!db) {
-      // Demo/Sandbox mode - return empty array (no fallback to mockData)
-      console.warn("No Firestore connection available");
-      onUpdate([]);
-      return () => {};
+      // Sandbox / Demo mode fallback to calculate load and details from mockData
+      console.warn("No Firestore connection available, using mockData fallback for faculty load");
+      
+      const triggerMockUpdate = () => {
+        const teachers = mockData.users.filter((u: any) => u.role === "teacher");
+        const schedules = mockData.schedules;
+        const courses = mockData.courses;
+        const departments = mockData.departments;
+        
+        const coursesMap = new Map();
+        courses.forEach((c: any) => coursesMap.set(c.id, c));
+        
+        const deptsMap = new Map();
+        departments.forEach((d: any) => deptsMap.set(d.id, d));
+        
+        const teachersDetailMap = new Map();
+        mockData.teachers.forEach((t: any) => {
+          if (t.uid) teachersDetailMap.set(t.uid, t);
+        });
+        
+        const facultyMap = new Map<string, FacultyMember>();
+        
+        teachers.forEach((teacher: any) => {
+          const details = teachersDetailMap.get(teacher.id) || {};
+          const targetUnits = details.targetUnits || 18;
+          facultyMap.set(teacher.id, {
+            id: teacher.id,
+            name: teacher.displayName || teacher.email || "Unknown",
+            department: deptsMap.get(teacher.departmentId)?.name || "Unknown",
+            designation: details.designation || "Faculty",
+            totalUnits: 0,
+            targetUnits,
+            status: "normal",
+            assignments: [],
+            specialization: details.specialization || "",
+            major: details.major || "",
+            certifications: details.certifications || [],
+            skills: details.skills || [],
+            teachingExperience: details.teachingExperience || "",
+            eligibleSubjects: details.eligibleSubjects || [],
+            employeeNo: details.employeeNo || "",
+            employmentType: details.employmentType || "Full-time",
+            officeLocation: details.officeLocation || "",
+          });
+        });
+        
+        schedules.forEach((schedule: any) => {
+          const faculty = facultyMap.get(schedule.teacherId);
+          if (faculty) {
+            const course = coursesMap.get(schedule.courseId);
+            if (course) {
+              const units = course.units || 3;
+              faculty.totalUnits += units;
+              faculty.assignments.push({
+                courseCode: course.code || "",
+                courseName: course.name,
+                units,
+                section: schedule.sectionId || "A",
+              });
+            }
+          }
+        });
+        
+        facultyMap.forEach((faculty) => {
+          if (faculty.totalUnits > faculty.targetUnits + 3) {
+            faculty.status = "overloaded";
+          } else if (faculty.totalUnits < faculty.targetUnits - 3) {
+            faculty.status = "underloaded";
+          } else {
+            faculty.status = "normal";
+          }
+        });
+        
+        onUpdate(Array.from(facultyMap.values()));
+      };
+      
+      triggerMockUpdate();
+      const interval = setInterval(triggerMockUpdate, 1000);
+      return () => clearInterval(interval);
     }
 
     // Firebase real-time subscription
@@ -61,20 +137,40 @@ export const facultyLoadService = {
             deptsMap.set(doc.id, { id: doc.id, ...doc.data() });
           });
 
+          // Get teachers detailed collection
+          const teachersDetailSnapshot = await getDocs(collection(db, "teachers"));
+          const teachersDetailMap = new Map<string, any>();
+          teachersDetailSnapshot.docs.forEach((doc) => {
+            const data = doc.data();
+            if (data.uid) {
+              teachersDetailMap.set(data.uid, { id: doc.id, ...data });
+            }
+          });
+
           // Calculate faculty load
           const facultyMap = new Map<string, FacultyMember>();
 
           (teachers as any[]).forEach((teacher) => {
-            const targetUnits = 18; // Default target
+            const details = teachersDetailMap.get(teacher.id) || {};
+            const targetUnits = details.targetUnits || 18;
             facultyMap.set(teacher.id, {
               id: teacher.id,
               name: teacher.displayName || teacher.email || "Unknown",
               department: deptsMap.get(teacher.departmentId)?.name || "Unknown",
-              designation: teacher.designation || "Faculty",
+              designation: details.designation || teacher.designation || "Faculty",
               totalUnits: 0,
               targetUnits,
               status: "normal",
               assignments: [],
+              specialization: details.specialization || "",
+              major: details.major || "",
+              certifications: details.certifications || [],
+              skills: details.skills || [],
+              teachingExperience: details.teachingExperience || "",
+              eligibleSubjects: details.eligibleSubjects || [],
+              employeeNo: details.employeeNo || "",
+              employmentType: details.employmentType || "Full-time",
+              officeLocation: details.officeLocation || "",
             });
           });
 
@@ -116,6 +212,97 @@ export const facultyLoadService = {
     );
 
     return scheduleUnsubscribe;
+  },
+
+  /**
+   * Update or create teacher profile detailed qualifications
+   */
+  async updateTeacherProfile(
+    userId: string,
+    data: Partial<FacultyMember>
+  ): Promise<void> {
+    const db = getDb();
+    
+    // We clean up fields to only store teacher profile specific properties
+    const profileUpdate: any = {
+      updatedAt: db ? new Date() : new Date(),
+    };
+    
+    if (data.designation !== undefined) profileUpdate.designation = data.designation;
+    if (data.specialization !== undefined) profileUpdate.specialization = data.specialization;
+    if (data.major !== undefined) profileUpdate.major = data.major;
+    if (data.certifications !== undefined) profileUpdate.certifications = data.certifications;
+    if (data.skills !== undefined) profileUpdate.skills = data.skills;
+    if (data.teachingExperience !== undefined) profileUpdate.teachingExperience = data.teachingExperience;
+    if (data.eligibleSubjects !== undefined) profileUpdate.eligibleSubjects = data.eligibleSubjects;
+    if (data.officeLocation !== undefined) profileUpdate.officeLocation = data.officeLocation;
+    if (data.targetUnits !== undefined) profileUpdate.targetUnits = Number(data.targetUnits);
+    if (data.employmentType !== undefined) profileUpdate.employmentType = data.employmentType;
+    if (data.employeeNo !== undefined) profileUpdate.employeeNo = data.employeeNo;
+
+    if (!db) {
+      // Sandbox fallback - update mockData
+      const teacher = mockData.teachers.find((t: any) => t.uid === userId);
+      if (teacher) {
+        Object.assign(teacher, profileUpdate);
+      } else {
+        mockData.teachers.push({
+          id: `teacher-${Date.now()}`,
+          uid: userId,
+          fullName: data.name || "Unknown",
+          ...profileUpdate
+        });
+      }
+      
+      // If displayName is updated, also update in users list
+      if (data.name) {
+        const user = mockData.users.find((u: any) => u.id === userId || u.uid === userId);
+        if (user) {
+          user.displayName = data.name;
+          user.updatedAt = new Date();
+        }
+      }
+      return;
+    }
+
+    try {
+      const { doc: firestoreDoc, updateDoc: firestoreUpdateDoc, addDoc: firestoreAddDoc, serverTimestamp } = await import("firebase/firestore");
+      
+      // 1. Update user displayName in users collection if changed
+      if (data.name) {
+        const userRef = firestoreDoc(db, "users", userId);
+        await firestoreUpdateDoc(userRef, {
+          displayName: data.name,
+          updatedAt: serverTimestamp(),
+        });
+      }
+
+      // 2. Update or insert in teachers collection
+      const teachersRef = collection(db, "teachers");
+      const q = query(teachersRef, where("uid", "==", userId));
+      const querySnapshot = await getDocs(q);
+      
+      const firestoreProfileUpdate = {
+        ...profileUpdate,
+        updatedAt: serverTimestamp()
+      };
+      
+      if (!querySnapshot.empty) {
+        const teacherDocRef = firestoreDoc(db, "teachers", querySnapshot.docs[0].id);
+        await firestoreUpdateDoc(teacherDocRef, firestoreProfileUpdate);
+      } else {
+        // Create new teacher profile
+        await addDoc(teachersRef, {
+          uid: userId,
+          fullName: data.name || "Unknown",
+          ...firestoreProfileUpdate,
+          createdAt: serverTimestamp(),
+        });
+      }
+    } catch (err) {
+      console.error("Error saving teacher profile:", err);
+      throw err;
+    }
   },
 
   /**
