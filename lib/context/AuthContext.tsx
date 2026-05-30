@@ -83,7 +83,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         // Listen to profile changes in real-time
         unsubscribeProfile = onSnapshot(userDocRef, async (userDoc) => {
           if (userDoc.exists()) {
-            const userData = userDoc.data() as any;
+            const userData = { id: userDoc.id, uid: userDoc.id, ...userDoc.data() } as any;
             // Ensure displayName is populated with fallbacks
             if (!userData.displayName) {
               userData.displayName = user.displayName || user.email?.split('@')[0] || 'User';

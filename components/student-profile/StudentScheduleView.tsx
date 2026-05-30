@@ -43,7 +43,7 @@ interface LiveToast {
 }
 
 export function StudentScheduleView() {
-  const { profile } = useAuth();
+  const { profile, user } = useAuth();
   const [entries, setEntries] = useState<TimetableEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [studentInfo, setStudentInfo] = useState<any>(null);
@@ -147,14 +147,20 @@ export function StudentScheduleView() {
   };
 
   useEffect(() => {
-    if (!profile || !profile.id) return;
+    const userId = profile?.id || (profile as any)?.uid || user?.uid;
+    if (!userId) {
+      if (profile === null && user === null) {
+        setLoading(false);
+      }
+      return;
+    }
 
     const db = getDb();
     if (!db) {
       // Sandbox/Demo Mode fallback with continuous synchronization
       const triggerMockUpdate = () => {
         const mockStudent = mockData.students.find(
-          (s) => s.uid === profile.id || s.uid === (profile as any).uid
+          (s) => s.uid === userId
         );
 
         if (mockStudent) {
@@ -208,10 +214,17 @@ export function StudentScheduleView() {
 
     // Live Firebase Synced Query Mode
     const studentsRef = collection(db, "students");
-    const studentQuery = query(studentsRef, where("uid", "==", profile.id));
+    const studentQuery = query(studentsRef, where("uid", "==", userId));
+
+    let unsubscribeSchedules: (() => void) | null = null;
 
     const unsubscribeStudent = onSnapshot(studentQuery, async (snapshot) => {
       try {
+        if (unsubscribeSchedules) {
+          unsubscribeSchedules();
+          unsubscribeSchedules = null;
+        }
+
         if (!snapshot.empty) {
           const sData = snapshot.docs[0].data();
           setStudentInfo(sData);
@@ -228,7 +241,7 @@ export function StudentScheduleView() {
 
           // Fetch schedules collection and filter programmatically for the section
           const scheduleQuery = collection(db, "schedules");
-          const unsubscribeSchedules = onSnapshot(scheduleQuery, async (schedSnapshot) => {
+          unsubscribeSchedules = onSnapshot(scheduleQuery, async (schedSnapshot) => {
             const scheduleData = schedSnapshot.docs.map(doc => ({
               id: doc.id,
               ...doc.data()
@@ -273,8 +286,6 @@ export function StudentScheduleView() {
             auditScheduleUpdates(enrichedEntries);
             setLoading(false);
           });
-
-          return () => unsubscribeSchedules();
         } else {
           setError("No matching student profile found for your account.");
           setLoading(false);
@@ -286,8 +297,13 @@ export function StudentScheduleView() {
       }
     });
 
-    return () => unsubscribeStudent();
-  }, [profile]);
+    return () => {
+      unsubscribeStudent();
+      if (unsubscribeSchedules) {
+        unsubscribeSchedules();
+      }
+    };
+  }, [profile, user]);
 
   // Simulation handlers for Room Changes & Rescheduling
   const simulateRoomChange = async () => {
