@@ -40,9 +40,14 @@ export function FacultyProfileDrawer({
     }
   }, [isOpen]);
 
-  // Load member data when opened
+  // Reset editing state when opened or when selected member changes
   useEffect(() => {
-    if (facultyMember) {
+    setIsEditing(false);
+  }, [facultyMember?.id, isOpen]);
+
+  // Load member data when opened or when a new member is selected, but only if not editing the current member
+  useEffect(() => {
+    if (facultyMember && !isEditing) {
       setName(facultyMember.name || "");
       setDesignation(facultyMember.designation || "Faculty");
       setSpecialization(facultyMember.specialization || "");
@@ -55,10 +60,9 @@ export function FacultyProfileDrawer({
       setOfficeLocation(facultyMember.officeLocation || "");
       setTargetUnits(facultyMember.targetUnits || 18);
       setEligibleSubjects(facultyMember.eligibleSubjects || []);
-      setIsEditing(false);
       setError(null);
     }
-  }, [facultyMember, isOpen]);
+  }, [facultyMember, isOpen, isEditing]);
 
   if (!isOpen || !facultyMember) return null;
 

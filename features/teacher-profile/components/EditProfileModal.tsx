@@ -34,26 +34,37 @@ export function EditProfileModal({
   const [loading, setLoading] = useState(false);
   const [fetchingCourses, setFetchingCourses] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [hasLoadedInit, setHasLoadedInit] = useState(false);
 
-  // Load initial values
+  // Reset loading flag when modal closes
   useEffect(() => {
-    if (profile) {
-      setName(profile.displayName || "");
+    if (!isOpen) {
+      setHasLoadedInit(false);
     }
-    if (teacherData) {
-      setDesignation(teacherData.designation || "Assistant Professor");
-      setSpecialization(teacherData.specialization || "");
-      setMajor(teacherData.major || "");
-      setCertificationsText(
-        teacherData.certifications ? teacherData.certifications.join(", ") : ""
-      );
-      setSkillsText(teacherData.skills ? teacherData.skills.join(", ") : "");
-      setTeachingExperience(teacherData.teachingExperience || "");
-      setOfficeLocation(teacherData.officeLocation || "");
-      setTargetUnits(teacherData.targetUnits || 18);
-      setEligibleSubjects(teacherData.eligibleSubjects || []);
+  }, [isOpen]);
+
+  // Load initial values only once when opened
+  useEffect(() => {
+    if (isOpen && !hasLoadedInit && (profile || teacherData)) {
+      if (profile) {
+        setName(profile.displayName || "");
+      }
+      if (teacherData) {
+        setDesignation(teacherData.designation || "Assistant Professor");
+        setSpecialization(teacherData.specialization || "");
+        setMajor(teacherData.major || "");
+        setCertificationsText(
+          teacherData.certifications ? teacherData.certifications.join(", ") : ""
+        );
+        setSkillsText(teacherData.skills ? teacherData.skills.join(", ") : "");
+        setTeachingExperience(teacherData.teachingExperience || "");
+        setOfficeLocation(teacherData.officeLocation || "");
+        setTargetUnits(teacherData.targetUnits || 18);
+        setEligibleSubjects(teacherData.eligibleSubjects || []);
+      }
+      setHasLoadedInit(true);
     }
-  }, [teacherData, profile, isOpen]);
+  }, [isOpen, hasLoadedInit, profile, teacherData]);
 
   // Fetch all courses for eligibility selection
   useEffect(() => {
