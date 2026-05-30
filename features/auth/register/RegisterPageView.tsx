@@ -3,12 +3,15 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { createUserWithEmailAndPassword } from "firebase/auth";
-import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { getAuthInstance, getDb } from "@/lib/firebase";
 import { appRoutes } from "@/lib/constants/routes.constants";
+import { mockData } from "@/lib/constants/mockData";
+import { GraduationCap, Briefcase } from "lucide-react";
 
 export default function RegisterPageView() {
   const navigate = useNavigate();
+  const [role, setRole] = useState<'student' | 'teacher'>('student');
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
@@ -19,40 +22,150 @@ export default function RegisterPageView() {
     e.preventDefault();
     setError(null);
     setLoading(true);
+
+    // School Email validation for Teacher
+    if (role === 'teacher') {
+      const emailDomain = email.split("@")[1]?.toLowerCase();
+      if (!emailDomain || !(emailDomain.endsWith(".edu") || emailDomain === "university.edu")) {
+        setError("Teachers must register using a valid school email address (ending in .edu).");
+        setLoading(false);
+        return;
+      }
+    }
+
     try {
       const auth = getAuthInstance();
       const db = getDb();
 
-      if (!auth) {
-        setError("Authentication not initialized");
-        setLoading(false);
+      if (!auth || !db) {
+        // Sandbox / Demo Mode fallback
+        console.warn("Firebase not fully configured. Seeding registration into local Developer Sandbox...");
+        
+        const mockUid = `user-${Math.floor(1000 + Math.random() * 9000)}`;
+        
+        const newMockUser = {
+          id: mockUid,
+          uid: mockUid,
+          email: email,
+          displayName: displayName,
+          role: role,
+          status: 'active',
+          departmentId: 'cs-dept',
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        };
+
+        mockData.users.push(newMockUser);
+
+        if (role === 'teacher') {
+          mockData.teachers.push({
+            uid: mockUid,
+            employeeNo: `EMP-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`,
+            fullName: displayName,
+            designation: 'Faculty',
+            employmentType: 'Full-time',
+            targetUnits: 18,
+            specialization: 'Computer Science',
+            major: 'Software Engineering',
+            certifications: [],
+            skills: [],
+            teachingExperience: '1 Year',
+            eligibleSubjects: [],
+            officeLocation: 'Science Building, Room 204',
+          });
+        } else {
+          mockData.students.push({
+            id: `student-${Math.floor(1000 + Math.random() * 9000)}`,
+            uid: mockUid,
+            studentNo: `STUD-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`,
+            fullName: displayName,
+            programId: 'bscs',
+            sectionId: 'section-bscs-3a', // Default BSCS-3A
+            yearLevel: 1,
+            major: 'General Computer Science',
+            gpa: 4.0,
+          });
+        }
+
+        const mockFirebaseUser = {
+          uid: mockUid,
+          email: email,
+          displayName: displayName,
+          emailVerified: true,
+        } as any;
+
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('demo_user', JSON.stringify({
+            firebaseUser: mockFirebaseUser,
+            profile: newMockUser
+          }));
+        }
+
+        const redirectPath = role === 'teacher' ? appRoutes.teacherDashboard : appRoutes.studentDashboard;
+        window.location.href = redirectPath;
         return;
       }
 
-      if (!db) {
-        setError("Database not initialized");
-        setLoading(false);
-        return;
-      }
-
+      // Real Firebase Mode
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
-      // Create user profile in Firestore
+      // 1. Create main profile in Firestore users collection
       await setDoc(doc(db, 'users', user.uid), {
         id: user.uid,
         email: user.email,
         displayName: displayName,
-        role: 'student',
+        role: role,
         status: 'active',
-        departmentId: null,
+        departmentId: 'cs-dept',
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       });
 
-      navigate(appRoutes.dashboard);
+      // 2. Seed role-specific collections in Firestore
+      if (role === 'teacher') {
+        const employeeNo = `EMP-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
+        await setDoc(doc(db, 'teachers', user.uid), {
+          uid: user.uid,
+          employeeNo: employeeNo,
+          fullName: displayName,
+          designation: 'Faculty',
+          employmentType: 'Full-time',
+          targetUnits: 18,
+          specialization: 'Computer Science',
+          major: 'Software Engineering',
+          certifications: [],
+          skills: [],
+          teachingExperience: '1 Year',
+          eligibleSubjects: [],
+          officeLocation: 'Science Building, Room 204',
+          createdAt: serverTimestamp(),
+        });
+      } else {
+        const studentNo = `STUD-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
+        await setDoc(doc(db, 'students', user.uid), {
+          uid: user.uid,
+          studentNo: studentNo,
+          fullName: displayName,
+          programId: 'bscs',
+          sectionId: 'section-bscs-3a', // Default BSCS-3A
+          yearLevel: 1,
+          major: 'General Computer Science',
+          gpa: 4.0,
+          createdAt: serverTimestamp(),
+        });
+      }
+
+      const redirectPath = role === 'teacher' ? appRoutes.teacherDashboard : appRoutes.studentDashboard;
+      navigate(redirectPath);
     } catch (err: any) {
-      setError(err.message || "Failed to create account.");
+      if (err.code === 'auth/email-already-in-use') {
+        setError("This email is already registered.");
+      } else if (err.code === 'auth/weak-password') {
+        setError("The password is too weak. Please use at least 6 characters.");
+      } else {
+        setError(err.message || "Failed to create account.");
+      }
     } finally {
       setLoading(false);
     }
@@ -69,12 +182,13 @@ export default function RegisterPageView() {
                 Faculty Wise
               </p>
               <div className="space-y-4">
-                <h1 className="text-4xl font-semibold tracking-tight sm:text-5xl">
-                  Student Portal Registration
+                <h1 className="text-4xl font-semibold tracking-tight sm:text-5xl transition-all duration-300">
+                  {role === 'student' ? 'Student Portal Registration' : 'Faculty Portal Registration'}
                 </h1>
-                <p className="max-w-lg text-base leading-7 text-stone-300 sm:text-lg">
-                  Create your student account to access your academic schedule, 
-                  view department announcements, and manage your enrollment.
+                <p className="max-w-lg text-base leading-7 text-stone-300 sm:text-lg transition-all duration-300">
+                  {role === 'student'
+                    ? 'Create your student account to access your academic schedule, view department announcements, and manage your enrollment.'
+                    : 'Create your professional teaching profile to coordinate timetables, manage teaching workloads, submit preferred availabilities, and check course details.'}
                 </p>
               </div>
             </div>
@@ -102,15 +216,51 @@ export default function RegisterPageView() {
               <p className="text-sm font-semibold uppercase tracking-[0.3em] text-amber-700">
                 Get started
               </p>
-              <h2 className="text-3xl font-semibold tracking-tight text-stone-950">
-                Student Registration
+              <h2 className="text-3xl font-semibold tracking-tight text-stone-950 transition-all duration-300">
+                {role === 'student' ? 'Student Registration' : 'Faculty Registration'}
               </h2>
-              <p className="text-sm leading-6 text-stone-600">
-                Teachers must be registered by their department administrator.
+              <p className="text-sm leading-6 text-stone-600 transition-all duration-300">
+                {role === 'student'
+                  ? 'Access your section timetable and class calendars.'
+                  : 'Requires a valid school email address (ending in .edu).'}
               </p>
             </div>
 
-            <form className="mt-8 space-y-5" onSubmit={handleRegister}>
+            {/* Role Selection Tabs */}
+            <div className="mt-6 grid grid-cols-2 gap-2.5 p-1.5 bg-stone-100/70 border border-stone-250/20 rounded-2xl">
+              <button
+                type="button"
+                onClick={() => {
+                  setRole('student');
+                  setError(null);
+                }}
+                className={`flex items-center justify-center gap-2 py-3.5 text-xs font-bold rounded-xl transition-all cursor-pointer ${
+                  role === 'student'
+                    ? 'bg-stone-950 text-white shadow-md'
+                    : 'text-stone-600 hover:text-stone-950 hover:bg-stone-200/50'
+                }`}
+              >
+                <GraduationCap className="h-4.5 w-4.5" />
+                I am a Student
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setRole('teacher');
+                  setError(null);
+                }}
+                className={`flex items-center justify-center gap-2 py-3.5 text-xs font-bold rounded-xl transition-all cursor-pointer ${
+                  role === 'teacher'
+                    ? 'bg-stone-950 text-white shadow-md'
+                    : 'text-stone-600 hover:text-stone-950 hover:bg-stone-200/50'
+                }`}
+              >
+                <Briefcase className="h-4.5 w-4.5" />
+                I am a Teacher
+              </button>
+            </div>
+
+            <form className="mt-6 space-y-5" onSubmit={handleRegister}>
               {error && (
                 <div className="rounded-xl bg-red-50 p-4 text-sm text-red-600 border border-red-100">
                   {error}
@@ -141,7 +291,7 @@ export default function RegisterPageView() {
                   type="email"
                   required
                   autoComplete="email"
-                  placeholder="student@university.edu"
+                  placeholder={role === 'student' ? "student@university.edu" : "teacher@university.edu"}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="h-12 w-full rounded-2xl border border-stone-200 bg-white px-4 text-stone-900 outline-none transition placeholder:text-stone-400 focus:border-amber-400 focus:ring-4 focus:ring-amber-100"
@@ -169,7 +319,7 @@ export default function RegisterPageView() {
                 disabled={loading}
                 className="inline-flex h-12 w-full items-center justify-center rounded-2xl bg-stone-950 px-5 text-sm font-semibold text-white transition hover:bg-stone-800 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {loading ? "Registering..." : "Register as Student"}
+                {loading ? "Registering..." : role === 'student' ? "Register as Student" : "Register as Teacher"}
               </button>
 
               <p className="text-center text-sm text-stone-600">

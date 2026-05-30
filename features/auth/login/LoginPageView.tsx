@@ -138,6 +138,13 @@ export default function LoginPageView() {
                 {loading ? "Signing in..." : "Sign in"}
               </button>
 
+              <p className="text-center text-sm text-stone-600 mt-4.5">
+                Don't have an account?{" "}
+                <Link to="/register" className="font-semibold text-amber-700 hover:text-amber-800 transition-colors">
+                  Create an account
+                </Link>
+              </p>
+
               {isDemoMode && (
                 <div className="mt-6 pt-6 border-t border-stone-200/60 space-y-4">
                   <div className="flex items-center gap-2">
