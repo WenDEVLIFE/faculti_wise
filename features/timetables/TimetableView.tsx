@@ -61,7 +61,7 @@ export default function TimetableView({ title, subtitle }: TimetableViewProps) {
 
           return {
             id: s.id,
-            courseCode: s.courseId,
+            courseCode: course?.code || s.courseId,
             courseName: course?.name || s.courseId,
             teacherName: teacherDisplayName,
             room: room ? `${room.name} (${room.building})` : s.roomId,
@@ -128,7 +128,7 @@ export default function TimetableView({ title, subtitle }: TimetableViewProps) {
 
             return {
               id: s.id,
-              courseCode: s.courseId,
+              courseCode: course?.code || s.courseId,
               courseName: course?.name || s.courseId,
               teacherName: teacherName,
               room: room ? `${room.name} (${room.building})` : s.roomId,

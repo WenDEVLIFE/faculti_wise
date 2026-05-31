@@ -187,7 +187,7 @@ export function StudentScheduleView() {
 
             return {
               id: s.id,
-              courseCode: s.courseId,
+              courseCode: course?.code || s.courseId,
               courseName: course?.name || s.courseId,
               teacherName: teacherDisplayName,
               room: room ? `${room.name} (${room.building})` : s.roomId,
@@ -270,7 +270,7 @@ export function StudentScheduleView() {
 
                 return {
                   id: s.id,
-                  courseCode: s.courseId,
+                  courseCode: course?.code || s.courseId,
                   courseName: course?.name || s.courseId,
                   teacherName: user?.displayName || user?.name || user?.fullName || "Instructor",
                   room: room ? `${room.name} (${room.building})` : s.roomId,
