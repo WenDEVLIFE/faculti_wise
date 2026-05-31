@@ -192,7 +192,7 @@ export function AddEditRoomModal({ isOpen, onClose, roomToEdit }: AddEditRoomMod
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-2">
+              <div className={roomToEdit ? "space-y-2" : "space-y-2 sm:col-span-2"}>
                 <label className="text-sm font-medium text-text-muted px-1">Room Type</label>
                 <select
                   value={type}
@@ -206,18 +206,20 @@ export function AddEditRoomModal({ isOpen, onClose, roomToEdit }: AddEditRoomMod
                 </select>
               </div>
 
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-text-muted px-1">Initial Status</label>
-                <select
-                  value={status}
-                  onChange={(e) => setStatus(e.target.value as RoomStatus)}
-                  className="w-full h-12 px-4 bg-surface-alt border border-border rounded-xl outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-text appearance-none cursor-pointer"
-                >
-                  <option value="available">Available</option>
-                  <option value="occupied">Occupied</option>
-                  <option value="maintenance">Maintenance</option>
-                </select>
-              </div>
+              {roomToEdit && (
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-text-muted px-1">Room Status</label>
+                  <select
+                    value={status}
+                    onChange={(e) => setStatus(e.target.value as RoomStatus)}
+                    className="w-full h-12 px-4 bg-surface-alt border border-border rounded-xl outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-text appearance-none cursor-pointer"
+                  >
+                    <option value="available">Available</option>
+                    <option value="occupied">Occupied</option>
+                    <option value="maintenance">Maintenance</option>
+                  </select>
+                </div>
+              )}
             </div>
 
             <div className="space-y-2">
