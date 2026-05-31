@@ -182,8 +182,8 @@ export function StudentScheduleView() {
           const enriched: TimetableEntry[] = filteredSchedules.map(s => {
             const course = mockData.courses.find(c => c.id === s.courseId);
             const room = mockData.rooms.find(r => r.id === s.roomId);
-            const matchingUser = mockData.users.find(u => u.id === s.teacherId);
-            const teacherDisplayName = matchingUser ? matchingUser.displayName : "Instructor";
+            const matchingUser = mockData.users.find(u => u.id === s.teacherId || u.uid === s.teacherId);
+            const teacherDisplayName = matchingUser ? (matchingUser.displayName || matchingUser.name || matchingUser.fullName || "Instructor") : "Instructor";
 
             return {
               id: s.id,
@@ -272,7 +272,7 @@ export function StudentScheduleView() {
                   id: s.id,
                   courseCode: s.courseId,
                   courseName: course?.name || s.courseId,
-                  teacherName: user?.displayName || "Instructor",
+                  teacherName: user?.displayName || user?.name || user?.fullName || "Instructor",
                   room: room ? `${room.name} (${room.building})` : s.roomId,
                   day: s.dayOfWeek as DayOfWeek,
                   startTime: s.startTime,

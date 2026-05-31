@@ -30,12 +30,12 @@ export function FacultyScheduleView() {
       const allSchedules: TimetableEntry[] = (mockData.schedules || []).map((s: any) => {
         const course = mockData.courses.find((c: any) => c.id === s.courseId);
         const room = mockData.rooms.find((r: any) => r.id === s.roomId);
-        const teacher = mockData.users.find((u: any) => u.id === s.teacherId);
+        const teacher = mockData.users.find((u: any) => u.id === s.teacherId || u.uid === s.teacherId);
         return {
           id: s.id,
           courseCode: s.courseId,
           courseName: course?.name || s.courseId,
-          teacherName: teacher?.displayName || "Instructor",
+          teacherName: teacher?.displayName || teacher?.name || teacher?.fullName || "Instructor",
           room: room ? `${room.name} (${room.building})` : s.roomId,
           day: s.dayOfWeek as DayOfWeek,
           startTime: s.startTime,
@@ -94,7 +94,7 @@ export function FacultyScheduleView() {
               id: s.id,
               courseCode: s.courseId,
               courseName: course?.name || s.courseId,
-              teacherName: teacher?.displayName || "Instructor",
+              teacherName: teacher?.displayName || teacher?.name || teacher?.fullName || "Instructor",
               room: room ? `${room.name} (${room.building})` : s.roomId,
               day: s.dayOfWeek as DayOfWeek,
               startTime: s.startTime,

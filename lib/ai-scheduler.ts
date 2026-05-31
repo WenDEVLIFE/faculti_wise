@@ -65,8 +65,8 @@ export function generateAiSchedule(
 
   // Helper to find a faculty display name
   const getTeacherName = (id: string) => {
-    const t = faculty.find(f => f.id === id);
-    return t?.displayName || id;
+    const t = faculty.find(f => f.id === id || (f as any).uid === id);
+    return t?.displayName || (t as any)?.name || (t as any)?.fullName || id;
   };
   const getRoomLabel = (id: string) => {
     const r = rooms.find(rm => rm.id === id);
