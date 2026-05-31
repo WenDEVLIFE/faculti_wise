@@ -30,13 +30,23 @@ export function FacultyProfileDrawer({
   const [targetUnits, setTargetUnits] = useState(18);
   const [eligibleSubjects, setEligibleSubjects] = useState<string[]>([]);
   const [allCourses, setAllCourses] = useState<any[]>([]);
+  const [rooms, setRooms] = useState<any[]>([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Load all courses on mount
+  // States for inline assignment editing
+  const [editingAssignmentId, setEditingAssignmentId] = useState<string | null>(null);
+  const [editDay, setEditDay] = useState("");
+  const [editRoom, setEditRoom] = useState("");
+  const [editStart, setEditStart] = useState("");
+  const [editEnd, setEditEnd] = useState("");
+  const [editSection, setEditSection] = useState("");
+
+  // Load all courses and rooms on mount
   useEffect(() => {
     if (isOpen) {
       facultyLoadService.getCourses().then(setAllCourses).catch(console.error);
+      facultyLoadService.getRooms().then(setRooms).catch(console.error);
     }
   }, [isOpen]);
 
@@ -106,6 +116,30 @@ export function FacultyProfileDrawer({
       setError(err.message || "Failed to save changes.");
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleSaveAssignment = async (id: string) => {
+    try {
+      await facultyLoadService.updateAssignment(id, {
+        dayOfWeek: editDay,
+        roomId: editRoom,
+        startTime: editStart,
+        endTime: editEnd,
+        sectionId: editSection,
+      });
+      setEditingAssignmentId(null);
+    } catch (err: any) {
+      setError(err.message || "Failed to update assignment");
+    }
+  };
+
+  const handleDeleteAssignment = async (id: string) => {
+    if (!window.confirm("Are you sure you want to delete this class assignment?")) return;
+    try {
+      await facultyLoadService.deleteAssignment(id);
+    } catch (err: any) {
+      setError(err.message || "Failed to delete assignment");
     }
   };
 
@@ -461,21 +495,152 @@ export function FacultyProfileDrawer({
               </h5>
               <div className="divide-y divide-border">
                 {facultyMember.assignments && facultyMember.assignments.length > 0 ? (
-                  facultyMember.assignments.map((assignment, idx) => (
-                    <div key={idx} className="flex justify-between items-center py-3 hover:bg-surface-alt/20 px-2 rounded-lg transition-colors">
-                      <div className="min-w-0 pr-3">
-                        <p className="text-sm font-bold text-text truncate">
-                          {assignment.courseName}
-                        </p>
-                        <p className="text-xs text-text-muted mt-0.5">
-                          Code: {assignment.courseCode} • Section: <span className="font-semibold">{assignment.section}</span>
-                        </p>
+                  facultyMember.assignments.map((assignment, idx) => {
+                    const isEditingAssignment = editingAssignmentId === assignment.id;
+                    if (isEditingAssignment) {
+                      return (
+                        <div key={idx} className="py-3.5 space-y-3 bg-surface-alt/20 p-3 rounded-xl border border-border/30">
+                          <div className="flex justify-between items-center">
+                            <span className="text-xs font-bold text-text truncate max-w-[200px]">{assignment.courseName}</span>
+                            <Badge className="bg-primary/5 text-primary text-xs font-bold rounded-lg border border-primary/10">{assignment.units} Units</Badge>
+                          </div>
+                          
+                          <div className="grid grid-cols-2 gap-3 text-xs">
+                            <div className="space-y-1">
+                              <label className="text-[10px] font-bold text-text-muted uppercase">Day</label>
+                              <select 
+                                value={editDay} 
+                                onChange={(e) => setEditDay(e.target.value)}
+                                className="w-full h-8 px-2 bg-white border border-border rounded-lg focus:outline-none focus:ring-1 focus:ring-primary"
+                              >
+                                {["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"].map(d => (
+                                  <option key={d} value={d}>{d}</option>
+                                ))}
+                              </select>
+                            </div>
+                            <div className="space-y-1">
+                              <label className="text-[10px] font-bold text-text-muted uppercase">Room</label>
+                              <select 
+                                value={editRoom} 
+                                onChange={(e) => setEditRoom(e.target.value)}
+                                className="w-full h-8 px-2 bg-white border border-border rounded-lg focus:outline-none focus:ring-1 focus:ring-primary"
+                              >
+                                <option value="">-- Select --</option>
+                                {rooms.map(r => (
+                                  <option key={r.id} value={r.id}>{r.name} - {r.building}</option>
+                                ))}
+                              </select>
+                            </div>
+                            <div className="space-y-1">
+                              <label className="text-[10px] font-bold text-text-muted uppercase">Start Time</label>
+                              <input 
+                                type="time" 
+                                value={editStart} 
+                                onChange={(e) => setEditStart(e.target.value)}
+                                className="w-full h-8 px-2 bg-white border border-border rounded-lg focus:outline-none focus:ring-1 focus:ring-primary"
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <label className="text-[10px] font-bold text-text-muted uppercase">End Time</label>
+                              <input 
+                                type="time" 
+                                value={editEnd} 
+                                onChange={(e) => setEditEnd(e.target.value)}
+                                className="w-full h-8 px-2 bg-white border border-border rounded-lg focus:outline-none focus:ring-1 focus:ring-primary"
+                              />
+                            </div>
+                            <div className="space-y-1 col-span-2">
+                              <label className="text-[10px] font-bold text-text-muted uppercase">Section</label>
+                              <input 
+                                type="text" 
+                                value={editSection} 
+                                onChange={(e) => setEditSection(e.target.value)}
+                                className="w-full h-8 px-2 bg-white border border-border rounded-lg focus:outline-none focus:ring-1 focus:ring-primary"
+                                placeholder="e.g. A"
+                              />
+                            </div>
+                          </div>
+
+                          <div className="flex gap-2 justify-end pt-1">
+                            <Button 
+                              size="sm" 
+                              variant="secondary" 
+                              className="h-8 text-xs font-semibold px-3"
+                              onClick={() => setEditingAssignmentId(null)}
+                            >
+                              Cancel
+                            </Button>
+                            <Button 
+                              size="sm" 
+                              className="h-8 text-xs font-semibold px-3 bg-primary hover:bg-primary-strong text-white"
+                              onClick={() => {
+                                if (assignment.id) {
+                                  handleSaveAssignment(assignment.id);
+                                }
+                              }}
+                            >
+                              Save
+                            </Button>
+                          </div>
+                        </div>
+                      );
+                    }
+
+                    return (
+                      <div key={idx} className="group flex justify-between items-center py-3 hover:bg-surface-alt/30 px-3.5 rounded-xl border border-transparent hover:border-border/30 transition-all">
+                        <div className="min-w-0 pr-3 space-y-0.5">
+                          <p className="text-sm font-bold text-text truncate">
+                            {assignment.courseName}
+                          </p>
+                          <p className="text-xs text-text-muted font-medium">
+                            Code: {assignment.courseCode} • Section: <span className="font-semibold text-text">{assignment.section}</span>
+                          </p>
+                          {assignment.dayOfWeek && (
+                            <p className="text-[10px] text-text-muted bg-primary/5 border border-primary/10 rounded-md px-1.5 py-0.5 inline-block font-semibold mt-1">
+                              {assignment.dayOfWeek} • {assignment.startTime} - {assignment.endTime}
+                              {assignment.roomId && ` • Room: ${rooms.find(r => r.id === assignment.roomId)?.name || assignment.roomId}`}
+                            </p>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <Badge className="bg-primary/5 text-primary text-xs font-bold rounded-lg border border-primary/10">
+                            {assignment.units} Units
+                          </Badge>
+                          {assignment.id && (
+                            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <button
+                                onClick={() => {
+                                  if (assignment.id) {
+                                    setEditingAssignmentId(assignment.id);
+                                    setEditDay(assignment.dayOfWeek || "Monday");
+                                    setEditRoom(assignment.roomId || "");
+                                    setEditStart(assignment.startTime || "09:00");
+                                    setEditEnd(assignment.endTime || "10:30");
+                                    setEditSection(assignment.section || "A");
+                                  }
+                                }}
+                                className="h-7 w-7 rounded-lg hover:bg-primary/10 text-primary transition-colors flex items-center justify-center"
+                                title="Edit schedule"
+                              >
+                                <Edit className="h-3.5 w-3.5" />
+                              </button>
+                              <button
+                                onClick={() => {
+                                  if (assignment.id) {
+                                    handleDeleteAssignment(assignment.id);
+                                  }
+                                }}
+                                className="h-7 w-7 rounded-lg hover:bg-red-50 text-red-600 transition-colors flex items-center justify-center"
+                                title="Delete schedule"
+                              >
+                                <X className="h-3.5 w-3.5" />
+                              </button>
+                            </div>
+                          )}
+                        </div>
                       </div>
-                      <Badge className="bg-primary/5 text-primary text-xs font-bold shrink-0 rounded-lg border border-primary/10">
-                        {assignment.units} Units
-                      </Badge>
-                    </div>
-                  ))
+                    );
+                  })
                 ) : (
                   <p className="text-xs text-text-muted italic py-2">
                     No active class schedules assigned to this faculty member for the current semester.
