@@ -24,6 +24,7 @@ import { TermCard } from "@/features/sections/components/TermCard";
 import { DataImportModal } from "@/features/data-import/components/DataImportModal";
 import { useAuth } from "@/lib/context/AuthContext";
 import { BackupManager } from "@/features/backups/components/BackupManager";
+import { dataImportService } from "@/features/data-import/data-import.service";
 
 export function InstitutionSettings() {
   const { profile } = useAuth();
@@ -260,6 +261,30 @@ export function InstitutionSettings() {
   };
 
   // Institution settings handlers
+  const downloadAllTemplates = (format: "csv" | "json") => {
+    const types: ("users" | "courses" | "rooms")[] = ["users", "courses", "rooms"];
+    types.forEach((type) => {
+      try {
+        const content = format === "csv" 
+          ? dataImportService.getTemplateCSV(type) 
+          : dataImportService.getTemplateJSON(type);
+        const blob = new Blob([content], { 
+          type: format === "csv" ? "text/csv;charset=utf-8;" : "application/json;charset=utf-8;" 
+        });
+        const link = document.createElement("a");
+        const url = URL.createObjectURL(blob);
+        link.setAttribute("href", url);
+        link.setAttribute("download", `${type}_template.${format}`);
+        link.style.visibility = "hidden";
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      } catch (err) {
+        console.error(`Failed to download ${type} template:`, err);
+      }
+    });
+  };
+
   const handleUpdateInstitutionSettings = async () => {
     if (!profile) return;
 
@@ -466,8 +491,12 @@ export function InstitutionSettings() {
                   <DepartmentCard
                     department={dept}
                     chairName={
-                      dept.chairUid
-                        ? teachers[dept.chairUid]?.displayName
+                      dept.chairUid && teachers[dept.chairUid]
+                        ? (() => {
+                            const t = teachers[dept.chairUid];
+                            const name = t.displayName || (t as any).name || (t as any).fullName;
+                            return name ? `${name} (${t.email})` : t.email;
+                          })()
                         : undefined
                     }
                     isAdmin={true}
@@ -676,8 +705,12 @@ export function InstitutionSettings() {
                   <SectionCard
                     section={section}
                     advisorName={
-                      section.advisorUid
-                        ? teachers[section.advisorUid]?.displayName
+                      section.advisorUid && teachers[section.advisorUid]
+                        ? (() => {
+                            const t = teachers[section.advisorUid];
+                            const name = t.displayName || (t as any).name || (t as any).fullName;
+                            return name ? `${name} (${t.email})` : t.email;
+                          })()
                         : undefined
                     }
                     isAdmin={true}
@@ -805,14 +838,14 @@ export function InstitutionSettings() {
                 Import Data
               </Button>
               <Button
-                onClick={() => setIsImportModalOpen(true)}
+                onClick={() => downloadAllTemplates("csv")}
                 variant="secondary"
                 className="gap-2 h-12"
               >
                 Download CSV Template
               </Button>
               <Button
-                onClick={() => setIsImportModalOpen(true)}
+                onClick={() => downloadAllTemplates("json")}
                 variant="secondary"
                 className="gap-2 h-12"
               >

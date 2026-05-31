@@ -166,10 +166,13 @@ export function AddEditDepartmentModal({
               >
                 <option value="">-- Select a teacher --</option>
                 {teachers.map((teacher) => {
-                  const teacherName = teacher.displayName || (teacher as any).name || (teacher as any).fullName || "Teacher";
+                  const teacherName = teacher.displayName || (teacher as any).name || (teacher as any).fullName;
+                  const displayLabel = teacherName 
+                    ? `${teacherName} (${teacher.email})` 
+                    : teacher.email;
                   return (
                     <option key={teacher.id} value={teacher.id}>
-                      {teacherName} ({teacher.email})
+                      {displayLabel}
                     </option>
                   );
                 })}
