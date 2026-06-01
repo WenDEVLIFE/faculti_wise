@@ -5,6 +5,7 @@ export interface CourseOffering {
   courseId: string;
   termId: string;
   sectionId?: string; // Optional: specific section this is offered to
+  programId?: string; // Optional: specific academic program this belongs to
   maxSlots?: number; // Optional: max enrollment
   assignedUnits: number; // Units assigned for this offering
   status: OfferingStatus;
@@ -20,6 +21,8 @@ export interface CourseOfferingWithCourse extends CourseOffering {
   courseLectureHours: number;
   courseLabHours: number;
   courseUnits: number;
+  sectionName?: string;
+  programCode?: string;
 }
 
 export interface OfferingFilter {

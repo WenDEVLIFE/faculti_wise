@@ -1,228 +1,347 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Course } from "@/lib/types/course.types";
+import { Program } from "@/lib/types/department-schedule.types";
+import { Section } from "@/lib/types/section-term.types";
+import { CourseOfferingWithCourse } from "@/lib/types/offering.types";
 import { Card, CardContent } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
-import { X, Search } from "lucide-react";
+import { programsService } from "@/features/programs/programs.service";
+import { sectionsService } from "@/features/sections/sections.service";
+import { X, Search, BookOpen, Layers, Award, AlertCircle } from "lucide-react";
 
 interface AddOfferingModalProps {
   termId: string;
-  allCourses: Course[];
-  offeredCourseIds: string[];
-  onAdd: (courseId: string, assignedUnits: number, notes?: string) => void;
+  allCourses: Course[]; // Subjects
+  existingOfferings: CourseOfferingWithCourse[];
+  onAdd: (
+    courseId: string,
+    assignedUnits: number,
+    sectionId: string,
+    programId: string,
+    notes?: string
+  ) => void;
   onClose: () => void;
 }
 
 export function AddOfferingModal({
   termId,
   allCourses,
-  offeredCourseIds,
+  existingOfferings,
   onAdd,
   onClose,
 }: AddOfferingModalProps) {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
+  // State for selections
+  const [programs, setPrograms] = useState<Program[]>([]);
+  const [sections, setSections] = useState<Section[]>([]);
+  
+  const [selectedProgramId, setSelectedProgramId] = useState<string>("");
+  const [selectedSectionId, setSelectedSectionId] = useState<string>("");
+  const [selectedSubject, setSelectedSubject] = useState<Course | null>(null);
+  
   const [assignedUnits, setAssignedUnits] = useState<number | "">("");
   const [notes, setNotes] = useState("");
+  const [subjectSearch, setSubjectSearch] = useState("");
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  // Filter courses: remove already offered ones, apply search
-  const availableCourses = allCourses
-    .filter((c) => !offeredCourseIds.includes(c.id))
-    .filter(
-      (c) =>
-        c.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        c.name.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+  // Subscribe to programs (Courses/Degrees)
+  useEffect(() => {
+    const unsubscribe = programsService.subscribePrograms(setPrograms);
+    return unsubscribe;
+  }, []);
 
-  const handleAdd = () => {
-    if (!selectedCourse || !assignedUnits || assignedUnits <= 0) {
+  // Subscribe to sections for selected program
+  useEffect(() => {
+    if (!selectedProgramId) {
+      setSections([]);
+      setSelectedSectionId("");
       return;
     }
-    // Only pass notes if it's not empty
-    onAdd(selectedCourse.id, Number(assignedUnits), notes.trim() || undefined);
-    setSelectedCourse(null);
-    setAssignedUnits("");
+    const unsubscribe = sectionsService.subscribeByProgram(selectedProgramId, setSections);
+    return unsubscribe;
+  }, [selectedProgramId]);
+
+  // Set default units when subject is selected
+  useEffect(() => {
+    if (selectedSubject) {
+      setAssignedUnits(selectedSubject.units);
+    } else {
+      setAssignedUnits("");
+    }
+    setErrorMsg(null);
+  }, [selectedSubject]);
+
+  // Check unique validation when subject or section changes
+  useEffect(() => {
+    if (selectedSubject && selectedSectionId) {
+      const isDuplicate = existingOfferings.some(
+        (o) => o.courseId === selectedSubject.id && o.sectionId === selectedSectionId
+      );
+      if (isDuplicate) {
+        setErrorMsg("This subject is already offered for the selected section/set in this term.");
+      } else {
+        setErrorMsg(null);
+      }
+    } else {
+      setErrorMsg(null);
+    }
+  }, [selectedSubject, selectedSectionId, existingOfferings]);
+
+  // Filter available subjects based on search
+  const filteredSubjects = allCourses.filter(
+    (c) =>
+      c.code.toLowerCase().includes(subjectSearch.toLowerCase()) ||
+      c.name.toLowerCase().includes(subjectSearch.toLowerCase())
+  );
+
+  const handleAdd = () => {
+    if (!selectedSubject || !selectedSectionId || !selectedProgramId || !assignedUnits || assignedUnits <= 0 || errorMsg) {
+      return;
+    }
+    
+    onAdd(
+      selectedSubject.id,
+      Number(assignedUnits),
+      selectedSectionId,
+      selectedProgramId,
+      notes.trim() || undefined
+    );
+    
+    // Reset states
+    setSelectedSubject(null);
     setNotes("");
   };
 
-  const isValid = selectedCourse && assignedUnits && assignedUnits > 0;
+  const selectedProgram = programs.find((p) => p.id === selectedProgramId);
+  const selectedSection = sections.find((s) => s.id === selectedSectionId);
+
+  const isValid =
+    selectedProgramId &&
+    selectedSectionId &&
+    selectedSubject &&
+    assignedUnits &&
+    assignedUnits > 0 &&
+    !errorMsg;
 
   return (
     <>
       {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-black bg-opacity-50 z-40"
+        className="fixed inset-0 bg-stone-900/40 backdrop-blur-sm z-40 animate-in fade-in duration-300"
         onClick={onClose}
       />
 
-      {/* Modal */}
-      <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
-        <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-          <CardContent className="pt-6">
-            {/* Header */}
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold text-text">Add Course Offering</h2>
-              <button
-                onClick={onClose}
-                className="p-2 hover:bg-gray-100 rounded-lg transition"
+      {/* Modal Container */}
+      <div className="fixed inset-0 flex items-center justify-center z-50 p-4 animate-in zoom-in-95 duration-300">
+        <Card className="w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col border border-border bg-white shadow-2xl rounded-3xl">
+          {/* Header */}
+          <div className="flex items-center justify-between p-6 border-b border-border/50 bg-surface-alt/30">
+            <div>
+              <h2 className="text-2xl font-bold text-text">Create Course Offering</h2>
+              <p className="text-xs text-text-muted mt-1">
+                Offer subjects for specific sections/sets to initialize the schedule.
+              </p>
+            </div>
+            <button
+              onClick={onClose}
+              className="p-2 hover:bg-stone-100 rounded-full transition-all text-text-muted hover:text-text"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+
+          {/* Scrollable Form Body */}
+          <div className="flex-1 overflow-y-auto p-6 space-y-6">
+            {errorMsg && (
+              <div className="bg-rose-50 border border-rose-200 text-rose-700 rounded-2xl p-4 text-xs font-semibold flex items-start gap-2.5">
+                <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
+                <span>{errorMsg}</span>
+              </div>
+            )}
+
+            {/* STEP 1: Select Academic Course (Program) */}
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-text uppercase tracking-wider flex items-center gap-1.5">
+                <Layers className="w-4 h-4 text-primary" />
+                1. Select Degree Course (Program)
+              </label>
+              <select
+                value={selectedProgramId}
+                onChange={(e) => {
+                  setSelectedProgramId(e.target.value);
+                  setSelectedSectionId("");
+                }}
+                className="w-full px-4 py-3 bg-surface border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-text font-medium"
               >
-                <X className="w-5 h-5 text-text-muted" />
-              </button>
+                <option value="">-- Choose a Degree Program --</option>
+                {programs.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.code} - {p.name}
+                  </option>
+                ))}
+              </select>
             </div>
 
-            <div className="space-y-6">
-              {/* Course Selection */}
-              <div>
-                <label className="block text-sm font-medium text-text mb-3">
-                  Select Course
+            {/* STEP 2: Select Section / Set */}
+            {selectedProgramId && (
+              <div className="space-y-2 animate-in fade-in slide-in-from-top-1 duration-200">
+                <label className="text-xs font-bold text-text uppercase tracking-wider flex items-center gap-1.5">
+                  <Award className="w-4 h-4 text-primary" />
+                  2. Select Section / Set
+                </label>
+                {sections.length > 0 ? (
+                  <select
+                    value={selectedSectionId}
+                    onChange={(e) => setSelectedSectionId(e.target.value)}
+                    className="w-full px-4 py-3 bg-surface border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-text font-medium"
+                  >
+                    <option value="">-- Select a Section/Set --</option>
+                    {sections.map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.name} ({s.studentCount} Students)
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <div className="p-4 border border-dashed border-border rounded-2xl text-center text-xs text-text-muted">
+                    No sections created for {selectedProgram?.code}. Manage sections separately first.
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* STEP 3: Select Subject */}
+            {selectedSectionId && (
+              <div className="space-y-3 animate-in fade-in slide-in-from-top-1 duration-200">
+                <label className="text-xs font-bold text-text uppercase tracking-wider flex items-center gap-1.5">
+                  <BookOpen className="w-4 h-4 text-primary" />
+                  3. Select Subject
                 </label>
 
-                {!selectedCourse ? (
-                  <div className="space-y-3">
-                    {/* Search Input */}
+                {!selectedSubject ? (
+                  <div className="space-y-2">
+                    {/* Search Field */}
                     <div className="relative">
-                      <Search className="absolute left-3 top-3 w-4 h-4 text-text-muted" />
+                      <Search className="absolute left-3.5 top-3.5 w-4 h-4 text-text-muted" />
                       <Input
                         type="text"
-                        placeholder="Search by course code or name..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="pl-10"
+                        placeholder="Search subject code or name..."
+                        value={subjectSearch}
+                        onChange={(e) => setSubjectSearch(e.target.value)}
+                        className="pl-10 h-11 rounded-xl text-sm"
                       />
                     </div>
 
-                    {/* Courses List */}
-                    <div className="max-h-48 overflow-y-auto border border-gray-200 rounded-lg">
-                      {availableCourses.length > 0 ? (
-                        availableCourses.map((course) => (
+                    {/* Subjects Listing */}
+                    <div className="max-h-48 overflow-y-auto border border-border/80 rounded-2xl divide-y divide-border/40">
+                      {filteredSubjects.length > 0 ? (
+                        filteredSubjects.map((subject) => (
                           <button
-                            key={course.id}
-                            onClick={() => setSelectedCourse(course)}
-                            className="w-full text-left px-4 py-3 hover:bg-gray-50 border-b border-gray-100 last:border-b-0 transition"
+                            key={subject.id}
+                            type="button"
+                            onClick={() => setSelectedSubject(subject)}
+                            className="w-full text-left px-4 py-3 hover:bg-primary/5 border-b border-border/10 last:border-b-0 transition-all flex items-center justify-between"
                           >
-                            <div className="flex items-start justify-between">
-                              <div className="flex-1">
-                                <p className="font-medium text-text">{course.code}</p>
-                                <p className="text-sm text-text-muted">{course.name}</p>
-                              </div>
-                              <div className="text-right ml-3">
-                                <p className="text-sm font-medium text-text">
-                                  {course.units} units
-                                </p>
-                                <p className="text-xs text-text-muted">
-                                  {course.lectureHours}L {course.labHours}Lab
-                                </p>
-                              </div>
+                            <div>
+                              <p className="font-semibold text-sm text-text">{subject.code}</p>
+                              <p className="text-xs text-text-muted truncate max-w-[340px]">
+                                {subject.name}
+                              </p>
+                            </div>
+                            <div className="text-right text-xs shrink-0">
+                              <span className="font-bold text-primary">{subject.units} Units</span>
+                              <p className="text-[10px] text-text-muted">
+                                {subject.lectureHours}L • {subject.labHours}Lab
+                              </p>
                             </div>
                           </button>
                         ))
                       ) : (
-                        <div className="px-4 py-8 text-center text-text-muted">
-                          {allCourses.length === offeredCourseIds.length
-                            ? "All courses are already offered in this term"
-                            : "No courses found matching your search"}
+                        <div className="px-4 py-8 text-center text-xs text-text-muted italic">
+                          No subjects matching search in prospectus.
                         </div>
                       )}
                     </div>
                   </div>
                 ) : (
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-center justify-between">
+                  <div className="bg-primary/5 border border-primary/20 rounded-2xl p-4 flex items-center justify-between animate-in zoom-in-95 duration-200">
                     <div>
-                      <p className="font-medium text-text">{selectedCourse.code}</p>
-                      <p className="text-sm text-text-muted">{selectedCourse.name}</p>
+                      <p className="font-bold text-primary">{selectedSubject.code}</p>
+                      <p className="text-sm font-semibold text-text">{selectedSubject.name}</p>
+                      <p className="text-xs text-text-muted mt-0.5">
+                        {selectedSubject.lectureHours} Lecture Hours • {selectedSubject.labHours} Lab Hours
+                      </p>
                     </div>
                     <button
-                      onClick={() => setSelectedCourse(null)}
-                      className="px-3 py-1 text-sm bg-white border border-blue-300 rounded hover:bg-gray-50 transition"
+                      type="button"
+                      onClick={() => setSelectedSubject(null)}
+                      className="px-3.5 py-1.5 text-xs font-semibold bg-white border border-border hover:bg-stone-50 rounded-xl transition-all shadow-sm shrink-0"
                     >
                       Change
                     </button>
                   </div>
                 )}
               </div>
+            )}
 
-              {/* Assigned Units */}
-              {selectedCourse && (
-                <>
-                  <div>
-                    <label className="block text-sm font-medium text-text mb-2">
-                      Assigned Units (max: {selectedCourse.units})
-                    </label>
-                    <Input
-                      type="number"
-                      min="1"
-                      max={selectedCourse.units}
-                      value={assignedUnits}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        setAssignedUnits(val === "" ? "" : Math.min(Number(val), selectedCourse.units));
-                      }}
-                      placeholder="Enter number of units"
-                      className="w-full"
-                    />
-                    {assignedUnits && Number(assignedUnits) > selectedCourse.units && (
-                      <p className="text-sm text-red-600 mt-1">
-                        Units cannot exceed course total ({selectedCourse.units})
-                      </p>
-                    )}
-                  </div>
+            {/* STEP 4: Review Units & Notes */}
+            {selectedSubject && selectedSectionId && (
+              <div className="space-y-4 animate-in fade-in slide-in-from-top-1 duration-200 border-t border-border/30 pt-4">
+                {/* Units Input */}
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-text uppercase tracking-wider">
+                    Units (Def: {selectedSubject.units})
+                  </label>
+                  <Input
+                    type="number"
+                    min="1"
+                    max={selectedSubject.units}
+                    value={assignedUnits}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setAssignedUnits(val === "" ? "" : Math.min(Number(val), selectedSubject.units));
+                    }}
+                    placeholder="Enter units"
+                    className="h-11 rounded-xl"
+                  />
+                </div>
 
-                  {/* Notes */}
-                  <div>
-                    <label className="block text-sm font-medium text-text mb-2">
-                      Notes (optional)
-                    </label>
-                    <textarea
-                      value={notes}
-                      onChange={(e) => setNotes(e.target.value)}
-                      placeholder="Add any notes or special conditions for this offering..."
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-primary text-text"
-                      rows={3}
-                    />
-                  </div>
+                {/* Notes Input */}
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-text uppercase tracking-wider">
+                    Notes (Optional)
+                  </label>
+                  <textarea
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                    placeholder="Add special requests or section details for scheduling..."
+                    rows={2.5}
+                    className="w-full px-4 py-3 border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-text resize-none bg-surface"
+                  />
+                </div>
+              </div>
+            )}
+          </div>
 
-                  {/* Course Details Summary */}
-                  <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 space-y-2 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-text-muted">Total Units:</span>
-                      <span className="font-medium text-text">{selectedCourse.units}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-text-muted">Lecture Hours:</span>
-                      <span className="font-medium text-text">{selectedCourse.lectureHours}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-text-muted">Lab Hours:</span>
-                      <span className="font-medium text-text">{selectedCourse.labHours}</span>
-                    </div>
-                    <div className="flex justify-between border-t border-gray-300 pt-2">
-                      <span className="text-text-muted">Status:</span>
-                      <span className="font-medium text-blue-600">Draft</span>
-                    </div>
-                  </div>
-                </>
-              )}
-            </div>
-
-            {/* Footer */}
-            <div className="mt-8 flex gap-3 justify-end border-t border-gray-200 pt-6">
-              <button
-                onClick={onClose}
-                className="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition font-medium text-text"
-              >
-                Cancel
-              </button>
-              <Button
-                onClick={handleAdd}
-                disabled={!isValid}
-                className="px-6 py-2 bg-primary hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Add Offering
-              </Button>
-            </div>
-          </CardContent>
+          {/* Footer Actions */}
+          <div className="p-6 border-t border-border/50 bg-surface-alt/30 flex items-center justify-end gap-3 shrink-0">
+            <button
+              onClick={onClose}
+              type="button"
+              className="px-5 py-2.5 border border-border rounded-xl hover:bg-stone-50 transition-all text-sm font-semibold text-text"
+            >
+              Cancel
+            </button>
+            <Button
+              onClick={handleAdd}
+              disabled={!isValid}
+              className="px-6 py-2.5 bg-primary hover:bg-primary-strong disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-semibold rounded-xl"
+            >
+              Add Offering
+            </Button>
+          </div>
         </Card>
       </div>
     </>

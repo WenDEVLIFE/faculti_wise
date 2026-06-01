@@ -89,7 +89,13 @@ export default function CourseOfferingsView() {
     updateStats();
   }, [offerings, selectedTermId]);
 
-  const handleAddOffering = async (courseId: string, assignedUnits: number, notes?: string) => {
+  const handleAddOffering = async (
+    courseId: string,
+    assignedUnits: number,
+    sectionId: string,
+    programId: string,
+    notes?: string
+  ) => {
     if (!profile) return;
 
     try {
@@ -97,6 +103,8 @@ export default function CourseOfferingsView() {
         {
           courseId,
           termId: selectedTermId,
+          sectionId,
+          programId,
           assignedUnits,
           status: "draft",
           notes,
@@ -306,7 +314,7 @@ export default function CourseOfferingsView() {
         <AddOfferingModal
           termId={selectedTermId}
           allCourses={allCourses}
-          offeredCourseIds={offerings.map((o) => o.courseId)}
+          existingOfferings={offerings}
           onAdd={handleAddOffering}
           onClose={() => setShowAddModal(false)}
         />

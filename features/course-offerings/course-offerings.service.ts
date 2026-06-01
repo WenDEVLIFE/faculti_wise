@@ -118,10 +118,14 @@ export const courseOfferingsService = {
     data: Omit<CourseOffering, "id" | "createdAt" | "updatedAt">,
     performingUser?: User
   ): Promise<CourseOffering> {
-    // Validate that course is not already offered in this term
+    // Validate that this subject is not already offered for the selected section/set in this term
     const existingOfferings = await this.getOfferingsByTerm(data.termId);
-    if (existingOfferings.some((o) => o.courseId === data.courseId)) {
-      throw new Error(`Course is already offered in this term`);
+    if (
+      existingOfferings.some(
+        (o) => o.courseId === data.courseId && o.sectionId === data.sectionId
+      )
+    ) {
+      throw new Error(`This subject is already offered for the selected section/set in this term`);
     }
 
     const db = getDb();
@@ -395,6 +399,46 @@ export const courseOfferingsService = {
       }
     }
 
+    // Fetch Section and Program details
+    let sectionName = "";
+    let programCode = "";
+    const sectionId = offering.sectionId;
+
+    if (sectionId) {
+      if (db) {
+        try {
+          const sectionRef = doc(db, "sections", sectionId);
+          const sectionSnap = await getDoc(sectionRef);
+          if (sectionSnap.exists()) {
+            const sectionData = sectionSnap.data();
+            sectionName = sectionData.name || "";
+            const progId = sectionData.programId;
+            if (progId) {
+              const programRef = doc(db, "programs", progId);
+              const programSnap = await getDoc(programRef);
+              if (programSnap.exists()) {
+                programCode = programSnap.data().code || "";
+              }
+            }
+          }
+        } catch (error) {
+          console.error(`Failed to fetch section/program details for ${sectionId}:`, error);
+        }
+      }
+
+      // Fallback to mockData
+      if (!sectionName && mockData.sections) {
+        const mockSec = mockData.sections.find((s: any) => s.id === sectionId);
+        if (mockSec) {
+          sectionName = mockSec.name;
+          const mockProg = mockData.programs?.find((p: any) => p.id === mockSec.programId);
+          if (mockProg) {
+            programCode = (mockProg as any).code || "";
+          }
+        }
+      }
+    }
+
     if (!course) {
       // Fallback for missing course data
       return {
@@ -404,6 +448,8 @@ export const courseOfferingsService = {
         courseLectureHours: 0,
         courseLabHours: 0,
         courseUnits: 0,
+        sectionName: sectionName || undefined,
+        programCode: programCode || undefined,
       };
     }
 
@@ -414,6 +460,8 @@ export const courseOfferingsService = {
       courseLectureHours: course.lectureHours,
       courseLabHours: course.labHours,
       courseUnits: course.units,
+      sectionName: sectionName || undefined,
+      programCode: programCode || undefined,
     };
   },
 
@@ -427,6 +475,7 @@ export const courseOfferingsService = {
       courseId: data.courseId || "",
       termId: data.termId || "",
       sectionId: data.sectionId,
+      programId: data.programId,
       maxSlots: data.maxSlots,
       assignedUnits: Number(data.assignedUnits) || 0,
       status: (data.status || "draft") as OfferingStatus,
@@ -441,13 +490,13 @@ export const courseOfferingsService = {
    * Export offerings as CSV
    */
   exportAsCSV(offerings: CourseOfferingWithCourse[]): string {
-    const headers = ["Course Code", "Course Name", "Status", "Assigned Units", "Max Slots", "Notes"];
+    const headers = ["Subject Code", "Subject Name", "Section/Set", "Status", "Units", "Notes"];
     const rows = offerings.map((o) => [
       o.courseCode,
       o.courseName,
+      o.sectionName || "-",
       o.status,
       o.assignedUnits,
-      o.maxSlots || "-",
       o.notes || "",
     ]);
 

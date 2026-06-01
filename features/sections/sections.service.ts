@@ -34,8 +34,7 @@ export const sectionsService = {
     const sectionsRef = collection(db, "sections");
     const q = query(
       sectionsRef,
-      where("programId", "==", programId),
-      orderBy("name", "asc")
+      where("programId", "==", programId)
     );
 
     return onSnapshot(q, (querySnapshot) => {
@@ -43,6 +42,8 @@ export const sectionsService = {
         id: doc.id,
         ...doc.data(),
       })) as Section[];
+      // Sort sections by name on the client side to avoid composite index requirements
+      sections.sort((a, b) => a.name.localeCompare(b.name));
       onUpdate(sections);
     });
   },
