@@ -10,7 +10,8 @@ import CourseOfferingsView from "@/features/course-offerings/CourseOfferingsView
 import RoomsView from "@/features/rooms/RoomsView";
 import SettingsView from "@/features/settings/SettingsView";
 import TimetableView from "@/features/timetables/TimetableView";
-import { InstitutionSettings } from "@/features/settings/components/InstitutionSettings";
+import { DepartmentsView } from "@/features/departments/DepartmentsView";
+import { SectionsView } from "@/features/sections/SectionsView";
 import UserManagementView from "@/features/user-management/UserManagementView";
 import AiSchedulesView from "@/features/ai-schedules/AiSchedulesView";
 
@@ -25,9 +26,21 @@ export function AdminDashboardView() {
           <div className="space-y-6">
             <div>
               <h1 className="text-4xl font-bold tracking-tight text-text font-source-serif">Departments</h1>
-              <p className="text-text-muted mt-1">Configure academic departments, assign chairs, and set up academic terms.</p>
+              <p className="text-text-muted mt-1">Configure academic departments, assign chairs, and manage programs.</p>
             </div>
-            <InstitutionSettings />
+            <DepartmentsView />
+          </div>
+        </Suspense>
+      );
+    case "sections":
+      return (
+        <Suspense fallback={<div className="animate-pulse h-[600px] bg-surface-alt rounded-xl" />}>
+          <div className="space-y-6">
+            <div>
+              <h1 className="text-4xl font-bold tracking-tight text-text font-source-serif">Sections & Terms</h1>
+              <p className="text-text-muted mt-1">Configure sections, student counts, and manage academic terms.</p>
+            </div>
+            <SectionsView />
           </div>
         </Suspense>
       );
