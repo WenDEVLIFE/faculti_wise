@@ -131,7 +131,7 @@ export function TeacherPersonalInfo() {
                     </Badge>
                   </div>
                   <p className="text-primary font-semibold">
-                    {profile.role.charAt(0).toUpperCase() + profile.role.slice(1)} • {teacherData?.designation || profile.departmentId || "General"}
+                    {profile.role.charAt(0).toUpperCase() + profile.role.slice(1)}{teacherData?.designation ? ` • ${teacherData.designation}` : ""}
                   </p>
                   <div className="flex flex-wrap justify-center md:justify-start gap-4 mt-4">
                     <div className="flex items-center gap-2 text-xs text-text-muted bg-surface-alt/50 px-3 py-1.5 rounded-full border border-border/50">
@@ -191,7 +191,7 @@ export function TeacherPersonalInfo() {
                 </div>
                 <div className="space-y-1">
                   <p className="text-[10px] font-bold text-text-muted uppercase tracking-widest">Employee ID</p>
-                  <p className="text-sm font-semibold text-text">{teacherData?.employeeNo || (profile.id ? profile.id.substring(0, 8).toUpperCase() : "N/A")}</p>
+                  <p className="text-sm font-semibold text-text">{teacherData?.employeeNo || "Not specified"}</p>
                 </div>
               </div>
 
