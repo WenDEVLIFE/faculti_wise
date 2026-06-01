@@ -2,7 +2,7 @@
 
 import React from "react";
 import { Card, CardContent } from "@/components/ui/Card";
-import { BookOpen, Users, Clock, Award, Loader2 } from "lucide-react";
+import { BookOpen, Clock, Award, Loader2, CheckCircle2 } from "lucide-react";
 import { useTeacherDashboard } from "@/lib/hooks/useTeacherDashboard";
 
 export function TeacherAcademicStats() {
@@ -21,12 +21,15 @@ export function TeacherAcademicStats() {
   }
 
   const stats = dashboardData?.stats;
-  const courses = dashboardData?.courses || [];
 
   const currentLoad = stats?.totalAssignedUnits ?? 0;
-  const totalStudents = courses.reduce((sum, c) => sum + (c.studentCount || 0), 0) || 154;
-  const weeklyHours = stats?.teachingHoursPerWeek ?? 0;
-  const rating = 4.9; // Baseline standard average rating
+  const targetLoad = stats?.targetUnits ?? 18;
+  const availabilityStatus = stats?.availabilityStatus
+    ? stats.availabilityStatus.charAt(0).toUpperCase() + stats.availabilityStatus.slice(1)
+    : "Submitted";
+  const scheduleStatus = stats?.scheduleStatus
+    ? stats.scheduleStatus.charAt(0).toUpperCase() + stats.scheduleStatus.slice(1)
+    : "Finalized";
 
   return (
     <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
@@ -51,13 +54,13 @@ export function TeacherAcademicStats() {
         <CardContent className="p-6">
           <div className="flex items-center gap-4">
             <div className="h-12 w-12 rounded-2xl bg-indigo-500 text-white flex items-center justify-center shadow-lg shadow-indigo-500/20">
-              <Users className="h-6 w-6" />
+              <Award className="h-6 w-6" />
             </div>
             <div>
-              <p className="text-[10px] font-bold text-indigo-600 uppercase tracking-widest">Total Students</p>
+              <p className="text-[10px] font-bold text-indigo-600 uppercase tracking-widest">Target Load</p>
               <div className="flex items-baseline gap-1">
-                <span className="text-2xl font-bold text-text">{totalStudents}</span>
-                <span className="text-xs text-text-muted">Enrolled</span>
+                <span className="text-2xl font-bold text-text">{targetLoad}</span>
+                <span className="text-xs text-text-muted">Units</span>
               </div>
             </div>
           </div>
@@ -71,10 +74,9 @@ export function TeacherAcademicStats() {
               <Clock className="h-6 w-6" />
             </div>
             <div>
-              <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest">Weekly Hours</p>
+              <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest">Availability</p>
               <div className="flex items-baseline gap-1">
-                <span className="text-2xl font-bold text-text">{weeklyHours}</span>
-                <span className="text-xs text-text-muted">Hours</span>
+                <span className="text-2xl font-bold text-text">{availabilityStatus}</span>
               </div>
             </div>
           </div>
@@ -85,13 +87,12 @@ export function TeacherAcademicStats() {
         <CardContent className="p-6">
           <div className="flex items-center gap-4">
             <div className="h-12 w-12 rounded-2xl bg-amber-500 text-white flex items-center justify-center shadow-lg shadow-amber-500/20">
-              <Award className="h-6 w-6" />
+              <CheckCircle2 className="h-6 w-6" />
             </div>
             <div>
-              <p className="text-[10px] font-bold text-amber-600 uppercase tracking-widest">Rating</p>
+              <p className="text-[10px] font-bold text-amber-600 uppercase tracking-widest">Schedule Status</p>
               <div className="flex items-baseline gap-1">
-                <span className="text-2xl font-bold text-text">{rating}</span>
-                <span className="text-xs text-text-muted">Avg.</span>
+                <span className="text-2xl font-bold text-text">{scheduleStatus}</span>
               </div>
             </div>
           </div>
