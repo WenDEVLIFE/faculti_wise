@@ -149,19 +149,14 @@ export const availabilityService = {
     }
 
     try {
-      const availRef = collection(db, "teacherAvailability");
-      const q = query(
-        availRef,
-        where("teacherId", "==", teacherId),
-        where("termId", "==", termId)
-      );
+      const docId = `${teacherId}-${termId}`;
+      const docRef = doc(db, "teacherAvailability", docId);
 
-      return onSnapshot(q, (snapshot) => {
-        if (snapshot.docs.length > 0) {
-          const doc = snapshot.docs[0];
-          const data = doc.data();
+      return onSnapshot(docRef, (docSnap) => {
+        if (docSnap.exists()) {
+          const data = docSnap.data();
           onUpdate({
-            id: doc.id,
+            id: docSnap.id,
             teacherId: data.teacherId,
             termId: data.termId,
             academicYear: data.academicYear,

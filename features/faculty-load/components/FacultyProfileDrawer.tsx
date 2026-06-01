@@ -6,6 +6,8 @@ import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { FacultyMember } from "@/lib/types/faculty-load.types";
 import { facultyLoadService } from "../faculty-load.service";
+import { EnhancedAvailabilityGrid } from "@/features/availability/components/EnhancedAvailabilityGrid";
+import { availabilityService } from "@/features/availability/availability.service";
 
 interface FacultyProfileDrawerProps {
   isOpen: boolean;
@@ -34,6 +36,10 @@ export function FacultyProfileDrawer({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // States for availability loading
+  const [availability, setAvailability] = useState<any>(null);
+  const [loadingAvailability, setLoadingAvailability] = useState(false);
+
   // States for inline assignment editing
   const [editingAssignmentId, setEditingAssignmentId] = useState<string | null>(null);
   const [editDay, setEditDay] = useState("");
@@ -49,6 +55,26 @@ export function FacultyProfileDrawer({
       facultyLoadService.getRooms().then(setRooms).catch(console.error);
     }
   }, [isOpen]);
+
+  // Load teacher availability
+  useEffect(() => {
+    if (!isOpen || !facultyMember?.id) {
+      setAvailability(null);
+      return;
+    }
+
+    setLoadingAvailability(true);
+    const unsubscribe = availabilityService.subscribeTeacherAvailability(
+      facultyMember.id,
+      "term-2026-s1", // Current Active Term
+      (data) => {
+        setAvailability(data);
+        setLoadingAvailability(false);
+      }
+    );
+
+    return () => unsubscribe();
+  }, [facultyMember?.id, isOpen]);
 
   // Reset editing state when opened or when selected member changes
   useEffect(() => {
@@ -462,11 +488,10 @@ export function FacultyProfileDrawer({
                         key={course.id}
                         type="button"
                         onClick={() => handleToggleSubject(course.id)}
-                        className={`flex items-center justify-between p-2 rounded-xl border text-left text-xs transition-all ${
-                          isSelected
-                            ? "border-primary bg-primary/5 text-primary font-semibold"
-                            : "border-border hover:bg-surface-alt text-text"
-                        }`}
+                        className={`flex items-center justify-between p-2 rounded-xl border text-left text-xs transition-all ${isSelected
+                          ? "border-primary bg-primary/5 text-primary font-semibold"
+                          : "border-border hover:bg-surface-alt text-text"
+                          }`}
                       >
                         <div className="flex flex-col truncate pr-1">
                           <span className="font-bold">{course.code || course.id}</span>
@@ -475,9 +500,8 @@ export function FacultyProfileDrawer({
                           </span>
                         </div>
                         <div
-                          className={`h-4.5 w-4.5 rounded border flex items-center justify-center shrink-0 ${
-                            isSelected ? "bg-primary border-primary text-white" : "border-border bg-white"
-                          }`}
+                          className={`h-4.5 w-4.5 rounded border flex items-center justify-center shrink-0 ${isSelected ? "bg-primary border-primary text-white" : "border-border bg-white"
+                            }`}
                         >
                           {isSelected && <Check className="h-3 w-3" />}
                         </div>
@@ -504,12 +528,12 @@ export function FacultyProfileDrawer({
                             <span className="text-xs font-bold text-text truncate max-w-[200px]">{assignment.courseName}</span>
                             <Badge className="bg-primary/5 text-primary text-xs font-bold rounded-lg border border-primary/10">{assignment.units} Units</Badge>
                           </div>
-                          
+
                           <div className="grid grid-cols-2 gap-3 text-xs">
                             <div className="space-y-1">
                               <label className="text-[10px] font-bold text-text-muted uppercase">Day</label>
-                              <select 
-                                value={editDay} 
+                              <select
+                                value={editDay}
                                 onChange={(e) => setEditDay(e.target.value)}
                                 className="w-full h-8 px-2 bg-white border border-border rounded-lg focus:outline-none focus:ring-1 focus:ring-primary"
                               >
@@ -520,8 +544,8 @@ export function FacultyProfileDrawer({
                             </div>
                             <div className="space-y-1">
                               <label className="text-[10px] font-bold text-text-muted uppercase">Room</label>
-                              <select 
-                                value={editRoom} 
+                              <select
+                                value={editRoom}
                                 onChange={(e) => setEditRoom(e.target.value)}
                                 className="w-full h-8 px-2 bg-white border border-border rounded-lg focus:outline-none focus:ring-1 focus:ring-primary"
                               >
@@ -533,27 +557,27 @@ export function FacultyProfileDrawer({
                             </div>
                             <div className="space-y-1">
                               <label className="text-[10px] font-bold text-text-muted uppercase">Start Time</label>
-                              <input 
-                                type="time" 
-                                value={editStart} 
+                              <input
+                                type="time"
+                                value={editStart}
                                 onChange={(e) => setEditStart(e.target.value)}
                                 className="w-full h-8 px-2 bg-white border border-border rounded-lg focus:outline-none focus:ring-1 focus:ring-primary"
                               />
                             </div>
                             <div className="space-y-1">
                               <label className="text-[10px] font-bold text-text-muted uppercase">End Time</label>
-                              <input 
-                                type="time" 
-                                value={editEnd} 
+                              <input
+                                type="time"
+                                value={editEnd}
                                 onChange={(e) => setEditEnd(e.target.value)}
                                 className="w-full h-8 px-2 bg-white border border-border rounded-lg focus:outline-none focus:ring-1 focus:ring-primary"
                               />
                             </div>
                             <div className="space-y-1 col-span-2">
                               <label className="text-[10px] font-bold text-text-muted uppercase">Section</label>
-                              <input 
-                                type="text" 
-                                value={editSection} 
+                              <input
+                                type="text"
+                                value={editSection}
                                 onChange={(e) => setEditSection(e.target.value)}
                                 className="w-full h-8 px-2 bg-white border border-border rounded-lg focus:outline-none focus:ring-1 focus:ring-primary"
                                 placeholder="e.g. A"
@@ -562,16 +586,16 @@ export function FacultyProfileDrawer({
                           </div>
 
                           <div className="flex gap-2 justify-end pt-1">
-                            <Button 
-                              size="sm" 
-                              variant="secondary" 
+                            <Button
+                              size="sm"
+                              variant="secondary"
                               className="h-8 text-xs font-semibold px-3"
                               onClick={() => setEditingAssignmentId(null)}
                             >
                               Cancel
                             </Button>
-                            <Button 
-                              size="sm" 
+                            <Button
+                              size="sm"
                               className="h-8 text-xs font-semibold px-3 bg-primary hover:bg-primary-strong text-white"
                               onClick={() => {
                                 if (assignment.id) {
@@ -647,6 +671,60 @@ export function FacultyProfileDrawer({
                   </p>
                 )}
               </div>
+            </div>
+
+            {/* Teacher's Availability Grid */}
+            <div className="space-y-4 pt-4 border-t border-border/50">
+              <h5 className="text-xs font-bold text-text-muted uppercase tracking-wider border-b border-border pb-1 flex items-center justify-between">
+                <span className="flex items-center gap-1.5">
+                  <Calendar className="h-4 w-4 text-primary" /> Teacher's Weekly Availability
+                </span>
+                {availability && (
+                  <span className="text-[10px] text-emerald-600 font-bold bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200 animate-pulse">
+                    ✓ Submitted
+                  </span>
+                )}
+              </h5>
+
+              {loadingAvailability ? (
+                <div className="flex items-center gap-2 py-6 text-xs text-text-muted">
+                  <Loader2 className="h-4 w-4 animate-spin text-primary" /> Loading availability...
+                </div>
+              ) : !availability ? (
+                <div className="p-5 border border-dashed border-border rounded-2xl text-center text-xs text-text-muted leading-relaxed bg-surface-alt/10">
+                  <AlertCircle className="w-6 h-6 text-amber-500 mx-auto mb-2 opacity-75" />
+                  <p className="font-semibold text-text">No Availability Submitted</p>
+                  <p className="mt-0.5">This teacher has not submitted their available hours for the current semester yet.</p>
+                </div>
+              ) : (
+                <div className="space-y-3 animate-in fade-in duration-300">
+                  <div className="flex items-center gap-4 text-[10px] text-text-muted bg-surface-alt/45 p-3 rounded-xl border border-border/30">
+                    <div className="flex items-center gap-1.5">
+                      <div className="h-3 w-3 rounded bg-emerald-500 animate-pulse" />
+                      <span>Preferred</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <div className="h-3 w-3 rounded bg-blue-400" />
+                      <span>Available</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <div className="h-3 w-3 rounded bg-gray-200 border border-gray-300" />
+                      <span>Unavailable</span>
+                    </div>
+                  </div>
+
+                  <div className="border border-border/60 rounded-2xl p-2.5 bg-white shadow-sm overflow-x-auto max-w-full">
+                    <div className="min-w-[480px]">
+                      <EnhancedAvailabilityGrid
+                        slots={availability.slots}
+                        onSlotsChange={() => { }}
+                        readOnly={true}
+                        showStats={false}
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
