@@ -111,7 +111,6 @@ export default function TimetableView({ title, subtitle }: TimetableViewProps) {
           : mockData.schedules;
 
         const enriched: TimetableEntry[] = filteredSchedules.map(s => {
-          const course = mockData.courses.find(c => c.id === s.courseId);
           const room = mockData.rooms.find(r => r.id === s.roomId);
           
           let teacherDisplayName = profile.displayName || (profile as any).name || (profile as any).fullName || s.teacherId;
@@ -120,15 +119,36 @@ export default function TimetableView({ title, subtitle }: TimetableViewProps) {
             teacherDisplayName = matchingUser ? (matchingUser.displayName || matchingUser.name || matchingUser.fullName || s.teacherId) : s.teacherId;
           }
 
-          // Resolve sectionName from mockData
-          const sectionId = (s as any).sectionId;
-          const mockSec = sectionId ? mockData.sections.find(sec => sec.id === sectionId) : null;
-          const sectionName = mockSec ? mockSec.name : (sectionId || "A");
+          // Resolve details from s directly or from mockData courseOfferings
+          let realCourseCode = s.courseCode || s.courseId;
+          let realCourseName = s.courseName || s.courseId;
+          let sectionName = "A";
+
+          const offering = mockData.courseOfferings?.find((o: any) => o.id === s.courseId);
+          if (offering) {
+            const mockSec = mockData.sections.find((sec: any) => sec.id === offering.sectionId);
+            if (mockSec) sectionName = mockSec.name;
+
+            const course = mockData.courses.find((c: any) => c.id === offering.courseId);
+            if (course) {
+              realCourseCode = course.code || realCourseCode;
+              realCourseName = course.name || realCourseName;
+            }
+          } else {
+            // Check direct course match as fallback
+            const course = mockData.courses.find((c: any) => c.id === s.courseId);
+            if (course) {
+              realCourseCode = course.code || realCourseCode;
+              realCourseName = course.name || realCourseName;
+            }
+            const mockSec = mockData.sections.find((sec: any) => sec.id === s.sectionId);
+            if (mockSec) sectionName = mockSec.name;
+          }
 
           return {
             id: s.id,
-            courseCode: course?.code || s.courseId,
-            courseName: course?.name || s.courseId,
+            courseCode: realCourseCode,
+            courseName: realCourseName,
             teacherName: teacherDisplayName,
             sectionName,
             room: room ? `${room.name} (${room.building})` : s.roomId,
@@ -176,9 +196,6 @@ export default function TimetableView({ title, subtitle }: TimetableViewProps) {
         // 3. Enrich the data (Courses, Rooms)
         const enrichedEntries: TimetableEntry[] = await Promise.all(
           scheduleData.map(async (s) => {
-            const courseDoc = await getDoc(doc(db, "courses", s.courseId));
-            const course = courseDoc.exists() ? (courseDoc.data() as Course) : null;
-
             const roomDoc = await getDoc(doc(db, "rooms", s.roomId));
             const room = roomDoc.exists() ? (roomDoc.data() as Room) : null;
 
@@ -193,20 +210,57 @@ export default function TimetableView({ title, subtitle }: TimetableViewProps) {
               }
             }
 
-            // Resolve sectionName from Firestore
-            const sectionId = (s as any).sectionId;
-            let sectionName = sectionId || "A";
-            if (sectionId) {
-              const sectionDoc = await getDoc(doc(db, "sections", sectionId));
-              if (sectionDoc.exists()) {
-                sectionName = sectionDoc.data().name || sectionId;
+            // Resolve course details and sectionName
+            let realCourseCode = s.courseCode || s.courseId;
+            let realCourseName = s.courseName || s.courseId;
+            let sectionName = "A";
+
+            try {
+              // Try to find course offering document (s.courseId is usually an offering reference ID)
+              const offeringDoc = await getDoc(doc(db, "courseOfferings", s.courseId));
+              if (offeringDoc.exists()) {
+                const offeringData = offeringDoc.data();
+                
+                // Get Section
+                const sectionId = offeringData.sectionId;
+                if (sectionId) {
+                  const sectionDoc = await getDoc(doc(db, "sections", sectionId));
+                  if (sectionDoc.exists()) {
+                    sectionName = sectionDoc.data().name || sectionId;
+                  }
+                }
+
+                // Get Prospectus Course
+                const courseDoc = await getDoc(doc(db, "courses", offeringData.courseId));
+                if (courseDoc.exists()) {
+                  realCourseCode = courseDoc.data().code || realCourseCode;
+                  realCourseName = courseDoc.data().name || realCourseName;
+                }
+              } else {
+                // Fallback: If s.courseId directly maps to the courses collection
+                const courseDoc = await getDoc(doc(db, "courses", s.courseId));
+                if (courseDoc.exists()) {
+                  realCourseCode = courseDoc.data().code || realCourseCode;
+                  realCourseName = courseDoc.data().name || realCourseName;
+                }
+
+                // Try root sectionId as a secondary fallback
+                const sectionId = (s as any).sectionId;
+                if (sectionId) {
+                  const sectionDoc = await getDoc(doc(db, "sections", sectionId));
+                  if (sectionDoc.exists()) {
+                    sectionName = sectionDoc.data().name || sectionId;
+                  }
+                }
               }
+            } catch (err) {
+              console.error("Error enriching schedule document:", s.id, err);
             }
 
             return {
               id: s.id,
-              courseCode: course?.code || s.courseId,
-              courseName: course?.name || s.courseId,
+              courseCode: realCourseCode,
+              courseName: realCourseName,
               teacherName: teacherName,
               sectionName,
               room: room ? `${room.name} (${room.building})` : s.roomId,
