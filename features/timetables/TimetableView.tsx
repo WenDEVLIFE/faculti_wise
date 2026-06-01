@@ -120,11 +120,17 @@ export default function TimetableView({ title, subtitle }: TimetableViewProps) {
             teacherDisplayName = matchingUser ? (matchingUser.displayName || matchingUser.name || matchingUser.fullName || s.teacherId) : s.teacherId;
           }
 
+          // Resolve sectionName from mockData
+          const sectionId = (s as any).sectionId;
+          const mockSec = sectionId ? mockData.sections.find(sec => sec.id === sectionId) : null;
+          const sectionName = mockSec ? mockSec.name : (sectionId || "A");
+
           return {
             id: s.id,
             courseCode: course?.code || s.courseId,
             courseName: course?.name || s.courseId,
             teacherName: teacherDisplayName,
+            sectionName,
             room: room ? `${room.name} (${room.building})` : s.roomId,
             day: s.dayOfWeek as DayOfWeek,
             startTime: s.startTime,
@@ -187,11 +193,22 @@ export default function TimetableView({ title, subtitle }: TimetableViewProps) {
               }
             }
 
+            // Resolve sectionName from Firestore
+            const sectionId = (s as any).sectionId;
+            let sectionName = sectionId || "A";
+            if (sectionId) {
+              const sectionDoc = await getDoc(doc(db, "sections", sectionId));
+              if (sectionDoc.exists()) {
+                sectionName = sectionDoc.data().name || sectionId;
+              }
+            }
+
             return {
               id: s.id,
               courseCode: course?.code || s.courseId,
               courseName: course?.name || s.courseId,
               teacherName: teacherName,
+              sectionName,
               room: room ? `${room.name} (${room.building})` : s.roomId,
               day: s.dayOfWeek as DayOfWeek,
               startTime: s.startTime,
@@ -295,11 +312,27 @@ export default function TimetableView({ title, subtitle }: TimetableViewProps) {
             teacherDisplayName = teacher ? teacher.displayName : s.teacherId;
           }
 
+          // Resolve sectionName from Firestore/mockData if available
+          const sectionId = (s as any).sectionId;
+          let sectionName = sectionId || "A";
+          if (sectionId) {
+            if (!db) {
+              const mockSec = mockData.sections.find(sec => sec.id === sectionId);
+              if (mockSec) sectionName = mockSec.name;
+            } else {
+              const sectionDoc = await getDoc(doc(db, "sections", sectionId));
+              if (sectionDoc.exists()) {
+                sectionName = sectionDoc.data().name || sectionId;
+              }
+            }
+          }
+
           return {
             id: `draft-${Math.random().toString(36).substr(2, 9)}`,
             courseCode: s.courseId,
             courseName: courseName || s.courseId,
             teacherName: teacherDisplayName,
+            sectionName,
             room: roomName,
             day: s.dayOfWeek as DayOfWeek,
             startTime: s.startTime,

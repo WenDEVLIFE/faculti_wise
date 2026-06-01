@@ -11,6 +11,7 @@ export interface TimetableEntry {
   endTime: string;   // HH:mm format
   color?: string;    // Optional hex or tailwind class
   type: "lecture" | "lab" | "seminar" | "other";
+  sectionName?: string;
 }
 
 export interface TimetableData {
