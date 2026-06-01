@@ -17,13 +17,15 @@ import {
   School,
   X,
   Shield,
-  UserCheck
+  UserCheck,
+  BrainCircuit
 } from "lucide-react";
 import { useAuth } from "@/lib/context/AuthContext";
 
 const navigation = [
   { name: "Dashboard", tab: "dashboard", href: "/dashboard", icon: LayoutDashboard },
   { name: "Timetables", tab: "timetables", href: "/dashboard?tab=timetables", icon: CalendarDays },
+  { name: "AI Schedules", tab: "ai-schedules", href: "/dashboard?tab=ai-schedules", icon: BrainCircuit },
   { name: "Faculty Load", tab: "faculty-load", href: "/dashboard?tab=faculty-load", icon: Users },
   { name: "Courses", tab: "courses", href: "/dashboard?tab=courses", icon: BookOpen },
   { name: "Course Offerings", tab: "offerings", href: "/dashboard?tab=offerings", icon: ListChecks },

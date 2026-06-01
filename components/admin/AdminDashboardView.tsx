@@ -12,6 +12,7 @@ import SettingsView from "@/features/settings/SettingsView";
 import TimetableView from "@/features/timetables/TimetableView";
 import { InstitutionSettings } from "@/features/settings/components/InstitutionSettings";
 import UserManagementView from "@/features/user-management/UserManagementView";
+import AiSchedulesView from "@/features/ai-schedules/AiSchedulesView";
 
 export function AdminDashboardView() {
   const [searchParamsHook] = useSearchParams();
@@ -37,6 +38,12 @@ export function AdminDashboardView() {
             title="Institutional Timetables" 
             subtitle="Manage and view department-wide schedules and academic planning."
           />
+        </Suspense>
+      );
+    case "ai-schedules":
+      return (
+        <Suspense fallback={<div className="animate-pulse h-[600px] bg-surface-alt rounded-xl" />}>
+          <AiSchedulesView />
         </Suspense>
       );
     case "faculty-load":

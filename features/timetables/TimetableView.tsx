@@ -22,7 +22,12 @@ import {
 import { Schedule, Course, Room, User } from "@/lib/types/firestore.types";
 import { generateAiSchedule, AiScheduleReport } from "@/lib/ai-scheduler";
 import { Button } from "@/components/ui/Button";
-import { Download, Printer, X, ChevronDown, ChevronUp } from "lucide-react";
+import { Download, Printer, X, ChevronDown, ChevronUp, Settings, CheckSquare, Square, Trash, Play, Check, Info } from "lucide-react";
+import { departmentsService } from "@/features/departments/departments.service";
+import { coursesService } from "@/features/courses/courses.service";
+import { userManagementService } from "@/features/user-management/user-management.service";
+import { aiSchedulesService } from "@/features/ai-schedules/ai-schedules.service";
+import { useNavigate } from "react-router-dom";
 
 interface TimetableViewProps {
   title: string;
@@ -37,6 +42,62 @@ export default function TimetableView({ title, subtitle }: TimetableViewProps) {
   const [isGenerating, setIsGenerating] = useState(false);
   const [aiReport, setAiReport] = useState<AiScheduleReport | null>(null);
   const [expandedDecision, setExpandedDecision] = useState<number | null>(null);
+  const navigate = useNavigate();
+
+  // AI configuration & draft states
+  const [showConfig, setShowConfig] = useState(false);
+  const [departments, setDepartments] = useState<any[]>([]);
+  const [allCourses, setAllCourses] = useState<any[]>([]);
+  const [allTeachers, setAllTeachers] = useState<any[]>([]);
+  const [selectedDeptId, setSelectedDeptId] = useState<string>("all");
+  const [selectedCourseIds, setSelectedCourseIds] = useState<string[]>([]);
+  const [selectedTeacherIds, setSelectedTeacherIds] = useState<string[]>([]);
+
+  // Draft preview states
+  const [draftEntries, setDraftEntries] = useState<TimetableEntry[] | null>(null);
+  const [draftSchedules, setDraftSchedules] = useState<any[] | null>(null);
+  const [draftReport, setDraftReport] = useState<AiScheduleReport | null>(null);
+  const [previewMode, setPreviewMode] = useState<'active' | 'draft'>('active');
+
+  // Load departments, courses, and teachers for AI generation panel
+  useEffect(() => {
+    if (!profile || profile.role !== "admin") return;
+
+    const unsubDepts = departmentsService.subscribeDepartments((depts) => {
+      setDepartments(depts);
+    });
+
+    const unsubCourses = coursesService.subscribeCourses((crs) => {
+      setAllCourses(crs);
+      setSelectedCourseIds(crs.map(c => c.id));
+    });
+
+    const unsubTeachers = userManagementService.subscribeUsers((users) => {
+      const activeTeachers = users.filter(u => u.role === 'teacher' && u.status === 'active');
+      setAllTeachers(activeTeachers);
+      setSelectedTeacherIds(activeTeachers.map(t => t.id));
+    });
+
+    return () => {
+      unsubDepts();
+      unsubCourses();
+      unsubTeachers();
+    };
+  }, [profile]);
+
+  const handleDeptChange = (deptId: string) => {
+    setSelectedDeptId(deptId);
+    if (deptId === "all") {
+      setSelectedCourseIds(allCourses.map(c => c.id));
+      setSelectedTeacherIds(allTeachers.map(t => t.id));
+    } else {
+      const filteredC = allCourses.filter(c => c.department === deptId);
+      const filteredT = allTeachers.filter(t => t.departmentId === deptId);
+      setSelectedCourseIds(filteredC.map(c => c.id));
+      setSelectedTeacherIds(filteredT.map(t => t.id));
+    }
+  };
+
 
   useEffect(() => {
     if (!profile || !profile.id || authLoading) return;
@@ -163,46 +224,43 @@ export default function TimetableView({ title, subtitle }: TimetableViewProps) {
     setError(null);
     setAiReport(null);
     try {
+      let courses: Course[] = [];
+      let users: User[] = [];
+      let rooms: Room[] = [];
+
       const db = getDb();
       if (!db) {
-        // Sandbox fallback: use mock data to generate schedule
-        const courses = mockData.courses;
-        const users = mockData.users;
-        const rooms = mockData.rooms;
+        courses = mockData.courses;
+        users = mockData.users;
+        rooms = mockData.rooms;
+      } else {
+        const coursesSnap = await getDocs(collection(db, "courses"));
+        courses = coursesSnap.docs.map(d => ({ id: d.id, ...d.data() })) as Course[];
+        
+        const usersSnap = await getDocs(collection(db, "users"));
+        users = usersSnap.docs.map(d => ({ id: d.id, ...d.data() })) as User[];
+        
+        const roomsSnap = await getDocs(collection(db, "rooms"));
+        rooms = roomsSnap.docs.map(d => ({ id: d.id, ...d.data() })) as Room[];
+      }
 
-        const { schedules: newSchedules, report } = generateAiSchedule(courses, users, rooms);
+      // Filter based on user configuration selection
+      const filteredCourses = courses.filter(c => selectedCourseIds.includes(c.id));
+      const filteredUsers = users.filter(u => selectedTeacherIds.includes(u.id));
 
-        if (newSchedules.length === 0) {
-           setError("AI could not generate a schedule with the current constraints (e.g. not enough teachers or rooms).");
-           setIsGenerating(false);
-           return;
-        }
-
-        // Simulate short optimization delay
-        await new Promise(resolve => setTimeout(resolve, 1500));
-
-        // Save to mockData.schedules in-memory
-        mockData.schedules = newSchedules.map((s, index) => ({
-          id: `schedule-${Date.now()}-${index}`,
-          ...s
-        }));
-
-        setAiReport(report);
+      if (filteredCourses.length === 0) {
+        setError("Please select at least one course/subject to schedule.");
+        setIsGenerating(false);
+        return;
+      }
+      if (filteredUsers.length === 0) {
+        setError("Please select at least one faculty member to assign.");
+        setIsGenerating(false);
         return;
       }
 
-      // Fetch all required data
-      const coursesSnap = await getDocs(collection(db, "courses"));
-      const courses = coursesSnap.docs.map(d => ({ id: d.id, ...d.data() })) as Course[];
-      
-      const usersSnap = await getDocs(collection(db, "users"));
-      const users = usersSnap.docs.map(d => ({ id: d.id, ...d.data() })) as User[];
-      
-      const roomsSnap = await getDocs(collection(db, "rooms"));
-      const rooms = roomsSnap.docs.map(d => ({ id: d.id, ...d.data() })) as Room[];
-
-      // Generate Schedule
-      const { schedules: newSchedules, report } = generateAiSchedule(courses, users, rooms);
+      // Generate AI Schedule Draft
+      const { schedules: newSchedules, report } = generateAiSchedule(filteredCourses, filteredUsers, rooms);
       
       if (newSchedules.length === 0) {
          setError("AI could not generate a schedule with the current constraints (e.g. not enough teachers or rooms).");
@@ -210,23 +268,104 @@ export default function TimetableView({ title, subtitle }: TimetableViewProps) {
          return;
       }
 
-      // Save to Firebase using a batch
-      const batch = writeBatch(db);
-      for (const sched of newSchedules) {
-        const newDocRef = doc(collection(db, "schedules"));
-        batch.set(newDocRef, sched);
-      }
-      
-      await batch.commit();
-      setAiReport(report);
-      
+      // Enrich draft schedules for rendering in the preview grid
+      const enrichedDraft: TimetableEntry[] = await Promise.all(
+        newSchedules.map(async (s) => {
+          let courseName = s.courseName;
+          let teacherDisplayName = "";
+          let roomName = s.roomId;
+
+          if (!db) {
+            const course = mockData.courses.find(c => c.id === s.courseId);
+            const room = mockData.rooms.find(r => r.id === s.roomId);
+            const teacher = mockData.users.find(u => u.id === s.teacherId);
+            courseName = course?.name || s.courseId;
+            roomName = room ? `${room.name} (${room.building})` : s.roomId;
+            teacherDisplayName = teacher ? teacher.displayName : s.teacherId;
+          } else {
+            const courseDoc = await getDoc(doc(db, "courses", s.courseId));
+            const course = courseDoc.exists() ? (courseDoc.data() as Course) : null;
+            const roomDoc = await getDoc(doc(db, "rooms", s.roomId));
+            const room = roomDoc.exists() ? (roomDoc.data() as Room) : null;
+            const teacherDoc = await getDoc(doc(db, "users", s.teacherId));
+            const teacher = teacherDoc.exists() ? (teacherDoc.data() as User) : null;
+
+            courseName = course?.name || s.courseId;
+            roomName = room ? `${room.name} (${room.building})` : s.roomId;
+            teacherDisplayName = teacher ? teacher.displayName : s.teacherId;
+          }
+
+          return {
+            id: `draft-${Math.random().toString(36).substr(2, 9)}`,
+            courseCode: s.courseId,
+            courseName: courseName || s.courseId,
+            teacherName: teacherDisplayName,
+            room: roomName,
+            day: s.dayOfWeek as DayOfWeek,
+            startTime: s.startTime,
+            endTime: s.endTime,
+            type: roomName.toLowerCase().includes("lab") ? "lab" : "lecture",
+          };
+        })
+      );
+
+      setDraftSchedules(newSchedules);
+      setDraftEntries(enrichedDraft);
+      setDraftReport(report);
+      setPreviewMode('draft');
+      setShowConfig(false);
+
     } catch (err: any) {
-      console.error("Failed to generate AI schedule:", err);
-      setError("Failed to generate AI schedule. Ensure you have valid data in Courses, Users, and Rooms.");
+      console.error("Failed to generate AI schedule draft:", err);
+      setError("Failed to generate AI schedule. Ensure you have valid data.");
     } finally {
       setIsGenerating(false);
     }
   };
+
+  const handleSaveProposal = async () => {
+    if (!draftSchedules || !draftReport || !profile) return;
+    
+    setIsGenerating(true);
+    setError(null);
+    try {
+      await aiSchedulesService.saveProposal({
+        name: `AI Proposal - ${new Date().toLocaleDateString()}`,
+        createdAt: new Date().toISOString(),
+        status: "draft",
+        filteredDepts: selectedDeptId === "all" ? [] : [selectedDeptId],
+        filteredCourses: selectedCourseIds,
+        filteredTeachers: selectedTeacherIds,
+        totalScheduled: draftReport.totalScheduled,
+        totalSkipped: draftReport.totalSkipped,
+        conflictsAvoided: draftReport.conflictsAvoided,
+        data: {
+          schedules: draftSchedules,
+          entries: draftEntries || [],
+        },
+        report: draftReport,
+      });
+
+      setDraftSchedules(null);
+      setDraftEntries(null);
+      setDraftReport(null);
+      setPreviewMode('active');
+      navigate("/dashboard?tab=ai-schedules");
+    } catch (err: any) {
+      console.error("Failed to save AI proposal:", err);
+      setError("Failed to save proposal.");
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const handleDiscardDraft = () => {
+    setDraftSchedules(null);
+    setDraftEntries(null);
+    setDraftReport(null);
+    setPreviewMode('active');
+  };
+
 
   const handleExportCsv = () => {
     if (entries.length === 0) return;
@@ -338,17 +477,22 @@ export default function TimetableView({ title, subtitle }: TimetableViewProps) {
         <div className="flex items-center gap-2">
           {profile.role === "admin" && (
             <Button 
-              onClick={handleGenerateAiSchedule} 
+              onClick={() => {
+                if (previewMode === 'draft') {
+                  setPreviewMode('active');
+                }
+                setShowConfig(!showConfig);
+              }}
               disabled={isGenerating}
-              className="bg-accent hover:bg-accent/90 text-white shadow-md animate-in fade-in zoom-in duration-500 no-print"
+              className={`${showConfig ? 'bg-primary hover:bg-primary/95' : 'bg-accent hover:bg-accent/90'} text-white shadow-md animate-in fade-in zoom-in duration-500 no-print`}
             >
-              {isGenerating ? "AI is Optimizing..." : "✨ Auto-Schedule with AI"}
+              {showConfig ? "Hide Generator Panel" : "✨ Auto-Schedule with AI"}
             </Button>
           )}
 
           <Button 
             onClick={handleExportCsv}
-            disabled={entries.length === 0}
+            disabled={(previewMode === 'draft' ? (draftEntries || []) : entries).length === 0}
             variant="secondary"
             className="no-print gap-1.5 h-10 text-xs hover:bg-surface-alt font-manrope border border-border"
           >
@@ -358,7 +502,7 @@ export default function TimetableView({ title, subtitle }: TimetableViewProps) {
 
           <Button 
             onClick={handleExportPdf}
-            disabled={entries.length === 0}
+            disabled={(previewMode === 'draft' ? (draftEntries || []) : entries).length === 0}
             variant="secondary"
             className="no-print gap-1.5 h-10 text-xs hover:bg-surface-alt font-manrope border border-border"
           >
@@ -367,17 +511,212 @@ export default function TimetableView({ title, subtitle }: TimetableViewProps) {
           </Button>
 
           <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20 no-print">
-            {entries.length > 0 ? entries[0].type.toUpperCase() : "Semester 1, 2026"}
+            {(previewMode === 'draft' ? (draftEntries || []) : entries).length > 0 ? (previewMode === 'draft' ? (draftEntries || []) : entries)[0].type.toUpperCase() : "Semester 1, 2026"}
           </Badge>
-          <Badge variant="outline" className="bg-accent/5 text-accent border-accent/20 no-print">Published</Badge>
+          <Badge variant="outline" className={`no-print ${previewMode === 'draft' ? 'bg-amber-100 text-amber-800 border-amber-300' : 'bg-accent/5 text-accent border-accent/20'}`}>
+            {previewMode === 'draft' ? 'DRAFT PREVIEW' : 'PUBLISHED'}
+          </Badge>
         </div>
       </div>
 
+      {/* AI Schedule Generation configuration panel */}
+      {showConfig && profile.role === "admin" && (
+        <Card className="border border-border shadow-md bg-white p-6 rounded-2xl animate-in slide-in-from-top-4 duration-300 no-print">
+          <div className="flex items-center gap-2 mb-4">
+            <Settings className="w-5 h-5 text-accent" />
+            <h2 className="text-xl font-bold tracking-tight text-text font-source-serif">AI Timetable Generation Settings</h2>
+          </div>
+          
+          <div className="space-y-6">
+            {/* Department selection */}
+            <div>
+              <label className="block text-sm font-semibold text-text mb-2">Select Department Filter</label>
+              <select
+                value={selectedDeptId}
+                onChange={(e) => handleDeptChange(e.target.value)}
+                className="w-full h-10 px-3 rounded-lg border border-border bg-white text-sm focus:outline-none focus:ring-2 focus:ring-accent"
+              >
+                <option value="all">All Departments</option>
+                {departments.map((dept) => (
+                  <option key={dept.id} value={dept.id}>{dept.name} ({dept.code})</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Courses checkbox list */}
+              <div className="space-y-2">
+                <div className="flex justify-between items-center">
+                  <label className="text-sm font-semibold text-text">Subjects / Courses ({allCourses.filter(c => selectedDeptId === 'all' || c.department === selectedDeptId).length})</label>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => {
+                        const filtered = allCourses.filter(c => selectedDeptId === 'all' || c.department === selectedDeptId);
+                        setSelectedCourseIds(prev => Array.from(new Set([...prev, ...filtered.map(c => c.id)])));
+                      }}
+                      className="text-xs text-accent font-medium hover:underline"
+                    >
+                      Select All
+                    </button>
+                    <button
+                      onClick={() => {
+                        const filtered = allCourses.filter(c => selectedDeptId === 'all' || c.department === selectedDeptId);
+                        setSelectedCourseIds(prev => prev.filter(id => !filtered.some(c => c.id === id)));
+                      }}
+                      className="text-xs text-text-muted font-medium hover:underline"
+                    >
+                      Clear
+                    </button>
+                  </div>
+                </div>
+                <div className="border border-border rounded-lg p-3 max-h-48 overflow-y-auto space-y-2 bg-surface-alt/25">
+                  {allCourses
+                    .filter(c => selectedDeptId === 'all' || c.department === selectedDeptId)
+                    .map((course) => {
+                      const isChecked = selectedCourseIds.includes(course.id);
+                      return (
+                        <label key={course.id} className="flex items-start gap-2.5 p-1.5 hover:bg-surface-alt rounded cursor-pointer transition-colors text-sm">
+                          <input
+                            type="checkbox"
+                            checked={isChecked}
+                            onChange={() => {
+                              setSelectedCourseIds(prev => 
+                                isChecked ? prev.filter(id => id !== course.id) : [...prev, course.id]
+                              );
+                            }}
+                            className="mt-1 rounded text-accent focus:ring-accent"
+                          />
+                          <div>
+                            <span className="font-semibold text-text mr-1.5">{course.code}</span>
+                            <span className="text-text-muted">{course.name}</span>
+                          </div>
+                        </label>
+                      );
+                    })}
+                  {allCourses.filter(c => selectedDeptId === 'all' || c.department === selectedDeptId).length === 0 && (
+                    <p className="text-xs text-text-muted text-center py-4">No courses available for selected department filter</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Faculty checkbox list */}
+              <div className="space-y-2">
+                <div className="flex justify-between items-center">
+                  <label className="text-sm font-semibold text-text">Faculty / Instructors ({allTeachers.filter(t => selectedDeptId === 'all' || t.departmentId === selectedDeptId).length})</label>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => {
+                        const filtered = allTeachers.filter(t => selectedDeptId === 'all' || t.departmentId === selectedDeptId);
+                        setSelectedTeacherIds(prev => Array.from(new Set([...prev, ...filtered.map(t => t.id)])));
+                      }}
+                      className="text-xs text-accent font-medium hover:underline"
+                    >
+                      Select All
+                    </button>
+                    <button
+                      onClick={() => {
+                        const filtered = allTeachers.filter(t => selectedDeptId === 'all' || t.departmentId === selectedDeptId);
+                        setSelectedTeacherIds(prev => prev.filter(id => !filtered.some(t => t.id === id)));
+                      }}
+                      className="text-xs text-text-muted font-medium hover:underline"
+                    >
+                      Clear
+                    </button>
+                  </div>
+                </div>
+                <div className="border border-border rounded-lg p-3 max-h-48 overflow-y-auto space-y-2 bg-surface-alt/25">
+                  {allTeachers
+                    .filter(t => selectedDeptId === 'all' || t.departmentId === selectedDeptId)
+                    .map((teacher) => {
+                      const isChecked = selectedTeacherIds.includes(teacher.id);
+                      return (
+                        <label key={teacher.id} className="flex items-center gap-2.5 p-1.5 hover:bg-surface-alt rounded cursor-pointer transition-colors text-sm">
+                          <input
+                            type="checkbox"
+                            checked={isChecked}
+                            onChange={() => {
+                              setSelectedTeacherIds(prev => 
+                                isChecked ? prev.filter(id => id !== teacher.id) : [...prev, teacher.id]
+                              );
+                            }}
+                            className="rounded text-accent focus:ring-accent"
+                          />
+                          <span className="text-text">{teacher.displayName || teacher.email}</span>
+                        </label>
+                      );
+                    })}
+                  {allTeachers.filter(t => selectedDeptId === 'all' || t.departmentId === selectedDeptId).length === 0 && (
+                    <p className="text-xs text-text-muted text-center py-4">No active faculty available for selected department filter</p>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2 border-t border-border pt-4">
+              <Button
+                variant="secondary"
+                onClick={() => setShowConfig(false)}
+                className="h-10"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleGenerateAiSchedule}
+                disabled={isGenerating || selectedCourseIds.length === 0 || selectedTeacherIds.length === 0}
+                className="bg-accent hover:bg-accent/90 text-white h-10 font-medium"
+              >
+                {isGenerating ? "AI Generating..." : "⚡ Generate Draft Timetable"}
+              </Button>
+            </div>
+          </div>
+        </Card>
+      )}
+
+      {/* AI Schedule Draft Preview Banner */}
+      {previewMode === 'draft' && draftSchedules && (
+        <div className="bg-amber-50 border border-amber-200 p-5 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-4 animate-in slide-in-from-top-4 duration-300 no-print">
+          <div className="flex items-start gap-3">
+            <div className="p-2 bg-amber-100 rounded-lg text-amber-800 mt-0.5">
+              <Info className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="text-base font-bold text-amber-900">Previewing AI Timetable Draft</h3>
+              <p className="text-sm text-amber-700 mt-0.5">
+                AI generated <strong>{draftSchedules.length}</strong> classes. Review the preview in the timetable grid below. These schedules are temporary and have not been applied to active timetables.
+              </p>
+            </div>
+          </div>
+          <div className="flex flex-wrap items-center gap-2.5">
+            <Button
+              onClick={() => setAiReport(draftReport)}
+              variant="secondary"
+              className="border border-amber-300 bg-white text-amber-800 hover:bg-amber-100 font-medium text-xs h-9"
+            >
+              View Decisions Report
+            </Button>
+            <Button
+              onClick={handleSaveProposal}
+              className="bg-accent hover:bg-accent/90 text-white font-medium text-xs h-9"
+            >
+              Save as Proposal
+            </Button>
+            <Button
+              onClick={handleDiscardDraft}
+              variant="secondary"
+              className="border border-border text-text hover:bg-surface-alt font-medium text-xs h-9"
+            >
+              Discard Draft
+            </Button>
+          </div>
+        </div>
+      )}
+
       <Card className="border-none shadow-md overflow-hidden bg-white/40 backdrop-blur-md">
         <CardContent className="p-0">
-          <TimetableGrid entries={entries} />
+          <TimetableGrid entries={previewMode === 'draft' ? (draftEntries || []) : entries} />
         </CardContent>
       </Card>
+
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card className="bg-blue-50/30 border-blue-100">
@@ -385,7 +724,7 @@ export default function TimetableView({ title, subtitle }: TimetableViewProps) {
             <CardTitle className="text-sm font-medium text-blue-700 uppercase tracking-wider">Total Sessions</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-blue-900">{entries.length} Classes</div>
+            <div className="text-2xl font-bold text-blue-900">{(previewMode === 'draft' ? (draftEntries || []) : entries).length} Classes</div>
           </CardContent>
         </Card>
         <Card className="bg-emerald-50/30 border-emerald-100">
@@ -394,7 +733,7 @@ export default function TimetableView({ title, subtitle }: TimetableViewProps) {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-emerald-900">
-              {entries.filter(e => e.type === "lecture").length} Sessions
+              {(previewMode === 'draft' ? (draftEntries || []) : entries).filter(e => e.type === "lecture").length} Sessions
             </div>
           </CardContent>
         </Card>
@@ -404,7 +743,7 @@ export default function TimetableView({ title, subtitle }: TimetableViewProps) {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-purple-900">
-              {entries.filter(e => e.type === "lab").length} Sessions
+              {(previewMode === 'draft' ? (draftEntries || []) : entries).filter(e => e.type === "lab").length} Sessions
             </div>
           </CardContent>
         </Card>
