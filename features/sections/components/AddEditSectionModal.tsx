@@ -208,11 +208,17 @@ export function AddEditSectionModal({
                 <option value="">
                   {loadingTeachers ? "Loading teachers..." : "-- Select a teacher --"}
                 </option>
-                {teachers.map((teacher) => (
-                  <option key={teacher.id} value={teacher.id}>
-                    {teacher.displayName}
-                  </option>
-                ))}
+                 {teachers.map((teacher) => {
+                  const teacherName = teacher.displayName || (teacher as any).name || (teacher as any).fullName;
+                  const displayLabel = teacherName 
+                    ? `${teacherName} (${teacher.email})` 
+                    : teacher.email;
+                  return (
+                    <option key={teacher.id} value={teacher.id}>
+                      {displayLabel}
+                    </option>
+                  );
+                })}
               </select>
               {loadingTeachers && (
                 <p className="text-xs text-text-muted">Loading available teachers...</p>

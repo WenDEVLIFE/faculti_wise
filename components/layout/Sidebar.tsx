@@ -18,7 +18,8 @@ import {
   X,
   Shield,
   UserCheck,
-  BrainCircuit
+  BrainCircuit,
+  Layers
 } from "lucide-react";
 import { useAuth } from "@/lib/context/AuthContext";
 
@@ -30,6 +31,7 @@ const navigation = [
   { name: "Courses", tab: "courses", href: "/dashboard?tab=courses", icon: BookOpen },
   { name: "Course Offerings", tab: "offerings", href: "/dashboard?tab=offerings", icon: ListChecks },
   { name: "Departments", tab: "departments", href: "/dashboard?tab=departments", icon: Building2 },
+  { name: "Sections", tab: "sections", href: "/dashboard?tab=sections", icon: Layers },
   { name: "Rooms & Labs", tab: "rooms", href: "/dashboard?tab=rooms", icon: School },
   { name: "Administrators", tab: "users-admin", href: "/dashboard?tab=users&sub=admin", icon: Shield },
   { name: "Faculty", tab: "users-teacher", href: "/dashboard?tab=users&sub=teacher", icon: UserCheck },

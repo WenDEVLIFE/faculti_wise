@@ -7,11 +7,9 @@ import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { getAuthInstance, getDb } from "@/lib/firebase";
 import { appRoutes } from "@/lib/constants/routes.constants";
 import { mockData } from "@/lib/constants/mockData";
-import { GraduationCap, Briefcase } from "lucide-react";
-
 export default function RegisterPageView() {
   const navigate = useNavigate();
-  const [role, setRole] = useState<'student' | 'teacher'>('student');
+  const [role] = useState<'student' | 'teacher'>('teacher');
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
@@ -226,39 +224,6 @@ export default function RegisterPageView() {
               </p>
             </div>
 
-            {/* Role Selection Tabs */}
-            <div className="mt-6 grid grid-cols-2 gap-2.5 p-1.5 bg-stone-100/70 border border-stone-250/20 rounded-2xl">
-              <button
-                type="button"
-                onClick={() => {
-                  setRole('student');
-                  setError(null);
-                }}
-                className={`flex items-center justify-center gap-2 py-3.5 text-xs font-bold rounded-xl transition-all cursor-pointer ${
-                  role === 'student'
-                    ? 'bg-stone-950 text-white shadow-md'
-                    : 'text-stone-600 hover:text-stone-950 hover:bg-stone-200/50'
-                }`}
-              >
-                <GraduationCap className="h-4.5 w-4.5" />
-                I am a Student
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setRole('teacher');
-                  setError(null);
-                }}
-                className={`flex items-center justify-center gap-2 py-3.5 text-xs font-bold rounded-xl transition-all cursor-pointer ${
-                  role === 'teacher'
-                    ? 'bg-stone-950 text-white shadow-md'
-                    : 'text-stone-600 hover:text-stone-950 hover:bg-stone-200/50'
-                }`}
-              >
-                <Briefcase className="h-4.5 w-4.5" />
-                I am a Teacher
-              </button>
-            </div>
 
             <form className="mt-6 space-y-5" onSubmit={handleRegister}>
               {error && (

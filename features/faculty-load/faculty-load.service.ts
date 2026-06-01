@@ -75,10 +75,15 @@ export const facultyLoadService = {
               const units = course.units || 3;
               faculty.totalUnits += units;
               faculty.assignments.push({
+                id: schedule.id,
                 courseCode: course.code || "",
                 courseName: course.name,
                 units,
                 section: schedule.sectionId || "A",
+                roomId: schedule.roomId,
+                dayOfWeek: schedule.dayOfWeek,
+                startTime: schedule.startTime,
+                endTime: schedule.endTime,
               });
             }
           }
@@ -183,10 +188,15 @@ export const facultyLoadService = {
                 const units = course.units || 3;
                 faculty.totalUnits += units;
                 faculty.assignments.push({
+                  id: schedule.id,
                   courseCode: course.code || "",
                   courseName: course.name,
                   units,
                   section: schedule.sectionId || "A",
+                  roomId: schedule.roomId,
+                  dayOfWeek: schedule.dayOfWeek,
+                  startTime: schedule.startTime,
+                  endTime: schedule.endTime,
                 });
               }
             }
@@ -465,5 +475,62 @@ export const facultyLoadService = {
       console.error("Error fetching rooms:", err);
       return [];
     }
+  },
+
+  /**
+   * Delete an assignment/schedule from Firestore or mockData
+   */
+  async deleteAssignment(scheduleId: string): Promise<void> {
+    const db = getDb();
+    if (!db) {
+      // Sandbox/Demo Mode: Delete from mockData
+      const index = mockData.schedules.findIndex((s) => s.id === scheduleId);
+      if (index !== -1) {
+        mockData.schedules.splice(index, 1);
+      }
+      return;
+    }
+
+    // Firestore Mode
+    const { doc: firestoreDoc, deleteDoc } = await import("firebase/firestore");
+    const scheduleRef = firestoreDoc(db, "schedules", scheduleId);
+    await deleteDoc(scheduleRef);
+  },
+
+  /**
+   * Update an assignment/schedule in Firestore or mockData
+   */
+  async updateAssignment(
+    scheduleId: string,
+    data: {
+      courseId?: string;
+      roomId?: string;
+      dayOfWeek?: string;
+      startTime?: string;
+      endTime?: string;
+      sectionId?: string;
+      teacherId?: string;
+    }
+  ): Promise<void> {
+    const db = getDb();
+    if (!db) {
+      // Sandbox/Demo Mode: Update in mockData
+      const index = mockData.schedules.findIndex((s) => s.id === scheduleId);
+      if (index !== -1) {
+        mockData.schedules[index] = {
+          ...mockData.schedules[index],
+          ...data,
+        };
+      }
+      return;
+    }
+
+    // Firestore Mode
+    const { doc: firestoreDoc, updateDoc } = await import("firebase/firestore");
+    const scheduleRef = firestoreDoc(db, "schedules", scheduleId);
+    await updateDoc(scheduleRef, {
+      ...data,
+      updatedAt: serverTimestamp(),
+    });
   },
 };

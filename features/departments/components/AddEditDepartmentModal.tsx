@@ -165,11 +165,17 @@ export function AddEditDepartmentModal({
                 className="w-full h-10 px-3 bg-surface-alt border border-border rounded-lg outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm appearance-none cursor-pointer"
               >
                 <option value="">-- Select a teacher --</option>
-                {teachers.map((teacher) => (
-                  <option key={teacher.id} value={teacher.id}>
-                    {teacher.displayName} ({teacher.email})
-                  </option>
-                ))}
+                {teachers.map((teacher) => {
+                  const teacherName = teacher.displayName || (teacher as any).name || (teacher as any).fullName;
+                  const displayLabel = teacherName 
+                    ? `${teacherName} (${teacher.email})` 
+                    : teacher.email;
+                  return (
+                    <option key={teacher.id} value={teacher.id}>
+                      {displayLabel}
+                    </option>
+                  );
+                })}
               </select>
             </div>
 

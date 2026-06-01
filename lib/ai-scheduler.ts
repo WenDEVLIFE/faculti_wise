@@ -65,8 +65,8 @@ export function generateAiSchedule(
 
   // Helper to find a faculty display name
   const getTeacherName = (id: string) => {
-    const t = faculty.find(f => f.id === id);
-    return t?.displayName || id;
+    const t = faculty.find(f => f.id === id || (f as any).uid === id);
+    return t?.displayName || (t as any)?.name || (t as any)?.fullName || id;
   };
   const getRoomLabel = (id: string) => {
     const r = rooms.find(rm => rm.id === id);
@@ -115,7 +115,7 @@ export function generateAiSchedule(
         roomReason = "Needs lab but none available, using any room.";
       }
     } else {
-      const lecRooms = rooms.filter(r => r.type === 'lecture' || r.type === 'seminar');
+      const lecRooms = rooms.filter(r => r.type === 'lecture' || r.type === 'seminar' || (r.type as string) === 'auditorium');
       if (lecRooms.length > 0) {
         suitableRooms = lecRooms;
         roomReason = `Lecture/seminar course → assigned lecture room (${lecRooms.length} available).`;
@@ -201,10 +201,19 @@ export function generateAiSchedule(
 
   // Build friendly summaries
   const teacherLoadSummary: Record<string, number> = {};
+  // Pre-populate active teachers with 0 load
+  for (const f of faculty.filter(u => u.role === 'teacher' && u.status === 'active')) {
+    teacherLoadSummary[getTeacherName(f.id)] = 0;
+  }
   for (const [id, count] of Object.entries(teacherLoad)) {
     teacherLoadSummary[getTeacherName(id)] = count;
   }
+  
   const roomUsageSummary: Record<string, number> = {};
+  // Pre-populate all rooms with 0 usage
+  for (const r of rooms) {
+    roomUsageSummary[getRoomLabel(r.id)] = 0;
+  }
   for (const [id, count] of Object.entries(roomUsage)) {
     roomUsageSummary[getRoomLabel(id)] = count;
   }

@@ -114,15 +114,15 @@ export default function TimetableView({ title, subtitle }: TimetableViewProps) {
           const course = mockData.courses.find(c => c.id === s.courseId);
           const room = mockData.rooms.find(r => r.id === s.roomId);
           
-          let teacherDisplayName = profile.displayName;
+          let teacherDisplayName = profile.displayName || (profile as any).name || (profile as any).fullName || s.teacherId;
           if (s.teacherId !== profile.id) {
-            const matchingUser = mockData.users.find(u => u.id === s.teacherId);
-            teacherDisplayName = matchingUser ? matchingUser.displayName : s.teacherId;
+            const matchingUser = mockData.users.find(u => u.id === s.teacherId || u.uid === s.teacherId);
+            teacherDisplayName = matchingUser ? (matchingUser.displayName || matchingUser.name || matchingUser.fullName || s.teacherId) : s.teacherId;
           }
 
           return {
             id: s.id,
-            courseCode: s.courseId,
+            courseCode: course?.code || s.courseId,
             courseName: course?.name || s.courseId,
             teacherName: teacherDisplayName,
             room: room ? `${room.name} (${room.building})` : s.roomId,
@@ -176,11 +176,22 @@ export default function TimetableView({ title, subtitle }: TimetableViewProps) {
             const roomDoc = await getDoc(doc(db, "rooms", s.roomId));
             const room = roomDoc.exists() ? (roomDoc.data() as Room) : null;
 
+            let teacherName = s.teacherId;
+            if (s.teacherId === profile.id) {
+              teacherName = profile.displayName || (profile as any).name || (profile as any).fullName || s.teacherId;
+            } else {
+              const teacherDoc = await getDoc(doc(db, "users", s.teacherId));
+              if (teacherDoc.exists()) {
+                const tData = teacherDoc.data();
+                teacherName = tData.displayName || tData.name || tData.fullName || s.teacherId;
+              }
+            }
+
             return {
               id: s.id,
-              courseCode: s.courseId,
+              courseCode: course?.code || s.courseId,
               courseName: course?.name || s.courseId,
-              teacherName: profile.displayName,
+              teacherName: teacherName,
               room: room ? `${room.name} (${room.building})` : s.roomId,
               day: s.dayOfWeek as DayOfWeek,
               startTime: s.startTime,

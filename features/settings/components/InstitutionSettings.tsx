@@ -3,35 +3,17 @@
 import React, { useState, useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
-import { Building2, Calendar, Globe, Bell, Plus, AlertTriangle, Layers, Upload, CheckCircle2, BookOpen } from "lucide-react";
-import { Department } from "@/lib/types/department.types";
+import { Building2, Calendar, Globe, Bell, Upload, CheckCircle2 } from "lucide-react";
 import { InstitutionSettings as InstitutionSettingsType } from "@/lib/types/institution.types";
-import { Section, Term } from "@/lib/types/section-term.types";
-import { User } from "@/lib/types/firestore.types";
 import { ImportSummary } from "@/lib/types/data-import.types";
 import { institutionService } from "@/features/settings/institution.service";
-import { departmentsService } from "@/features/departments/departments.service";
-import { programsService } from "@/features/programs/programs.service";
-import { sectionsService, termsService } from "@/features/sections/sections.service";
-import { AddEditDepartmentModal } from "@/features/departments/components/AddEditDepartmentModal";
-import { DepartmentCard } from "@/features/departments/components/DepartmentCard";
-import { AddEditProgramModal } from "@/features/programs/components/AddEditProgramModal";
-import { ProgramCard } from "@/features/programs/components/ProgramCard";
-import { AddEditSectionModal } from "@/features/sections/components/AddEditSectionModal";
-import { SectionCard } from "@/features/sections/components/SectionCard";
-import { AddEditTermModal } from "@/features/sections/components/AddEditTermModal";
-import { TermCard } from "@/features/sections/components/TermCard";
+import { dataImportService } from "@/features/data-import/data-import.service";
 import { DataImportModal } from "@/features/data-import/components/DataImportModal";
 import { useAuth } from "@/lib/context/AuthContext";
 import { BackupManager } from "@/features/backups/components/BackupManager";
 
 export function InstitutionSettings() {
   const { profile } = useAuth();
-  const [departments, setDepartments] = useState<any[]>([]);
-  const [programs, setPrograms] = useState<any[]>([]);
-  const [sections, setSections] = useState<Section[]>([]);
-  const [terms, setTerms] = useState<Term[]>([]);
-  const [teachers, setTeachers] = useState<Record<string, User>>({});
 
   // Institution settings state
   const [institutionSettings, setInstitutionSettings] = useState<InstitutionSettingsType | null>(null);
@@ -44,35 +26,9 @@ export function InstitutionSettings() {
   const [savingSettings, setSavingSettings] = useState(false);
   const [settingsMessage, setSettingsMessage] = useState<string | null>(null);
 
-  // Department modal state
-  const [isDeptModalOpen, setIsDeptModalOpen] = useState(false);
-  const [departmentToEdit, setDepartmentToEdit] = useState<Department | undefined>();
-
-  // Program modal state
-  const [isProgramModalOpen, setIsProgramModalOpen] = useState(false);
-  const [programToEdit, setProgramToEdit] = useState<any | undefined>();
-  const [selectedDepartmentId, setSelectedDepartmentId] = useState("");
-
-  // Section modal state
-  const [isSectionModalOpen, setIsSectionModalOpen] = useState(false);
-  const [sectionToEdit, setSectionToEdit] = useState<Section | undefined>();
-  const [selectedProgramId, setSelectedProgramId] = useState("");
-
-  // Term modal state
-  const [isTermModalOpen, setIsTermModalOpen] = useState(false);
-  const [termToEdit, setTermToEdit] = useState<Term | undefined>();
-
   // Import modal state
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [importSuccessMessage, setImportSuccessMessage] = useState<string | null>(null);
-
-  // UI state
-  const [loading, setLoading] = useState(true);
-  const [deptDeleteConfirm, setDeptDeleteConfirm] = useState<string | null>(null);
-  const [programDeleteConfirm, setProgramDeleteConfirm] = useState<string | null>(null);
-  const [sectionDeleteConfirm, setSectionDeleteConfirm] = useState<string | null>(null);
-  const [termDeleteConfirm, setTermDeleteConfirm] = useState<string | null>(null);
-  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     // Subscribe to institution settings
@@ -86,170 +42,10 @@ export function InstitutionSettings() {
       });
     });
 
-    // Subscribe to departments
-    const unsubscribeDepts = departmentsService.subscribeDepartments((data) => {
-      setDepartments(data);
-    });
-
-    // Subscribe to programs
-    const unsubscribePrograms = programsService.subscribePrograms((data) => {
-      setPrograms(data);
-      if (data.length > 0 && !selectedProgramId) {
-        setSelectedProgramId(data[0].id);
-      }
-    });
-
-    // Subscribe to sections
-    const unsubscribeSections = sectionsService.subscribeAll((data) => {
-      setSections(data);
-      setLoading(false);
-      
-      // Reload teachers when sections change to ensure advisor names are available
-      const reloadTeachers = async () => {
-        try {
-          const teachersData = await departmentsService.getTeachers();
-          const teachersMap: Record<string, User> = {};
-          teachersData.forEach((teacher) => {
-            teachersMap[teacher.id] = teacher;
-          });
-          setTeachers(teachersMap);
-        } catch (err) {
-          console.error("Error loading teachers:", err);
-        }
-      };
-      reloadTeachers();
-    });
-
-    // Subscribe to terms
-    const unsubscribeTerms = termsService.subscribeAll((data) => {
-      setTerms(data);
-    });
-
     return () => {
-      unsubscribeDepts();
-      unsubscribePrograms();
-      unsubscribeSections();
-      unsubscribeTerms();
+      unsubscribeSettings();
     };
   }, []);
-
-  // Department handlers
-  const handleAddDeptClick = () => {
-    setDepartmentToEdit(undefined);
-    setIsDeptModalOpen(true);
-  };
-
-  const handleEditDeptClick = (dept: Department) => {
-    setDepartmentToEdit(dept);
-    setIsDeptModalOpen(true);
-  };
-
-  const handleDeleteDeptClick = async (dept: Department) => {
-    setDeleting(true);
-    try {
-      await departmentsService.deleteDepartment(dept.id, profile || undefined);
-      setDeptDeleteConfirm(null);
-    } catch (err) {
-      console.error("Error deleting department:", err);
-      alert("Failed to delete department");
-    } finally {
-      setDeleting(false);
-    }
-  };
-
-  // Program handlers
-  const handleAddProgramClick = () => {
-    setProgramToEdit(undefined);
-    setSelectedDepartmentId(departments.length > 0 ? departments[0].id : "");
-    setIsProgramModalOpen(true);
-  };
-
-  const handleEditProgramClick = (program: any) => {
-    setProgramToEdit(program);
-    setSelectedDepartmentId(program.departmentId);
-    setIsProgramModalOpen(true);
-  };
-
-  const handleDeleteProgramClick = async (program: any) => {
-    setDeleting(true);
-    try {
-      await programsService.deleteProgram(program.id, profile || undefined);
-      setProgramDeleteConfirm(null);
-    } catch (err) {
-      console.error("Error deleting program:", err);
-      alert("Failed to delete program");
-    } finally {
-      setDeleting(false);
-    }
-  };
-
-  // Section handlers
-  const handleAddSectionClick = () => {
-    setSectionToEdit(undefined);
-    setIsSectionModalOpen(true);
-  };
-
-  const handleEditSectionClick = (section: Section) => {
-    setSectionToEdit(section);
-    setIsSectionModalOpen(true);
-  };
-
-  const handleDeleteSectionClick = async (section: Section) => {
-    setDeleting(true);
-    try {
-      await sectionsService.deleteSection(section.id, profile || undefined);
-      setSectionDeleteConfirm(null);
-    } catch (err) {
-      console.error("Error deleting section:", err);
-      alert("Failed to delete section");
-    } finally {
-      setDeleting(false);
-    }
-  };
-
-  // Term handlers
-  const handleAddTermClick = () => {
-    setTermToEdit(undefined);
-    setIsTermModalOpen(true);
-  };
-
-  const handleEditTermClick = (term: Term) => {
-    setTermToEdit(term);
-    setIsTermModalOpen(true);
-  };
-
-  const handleDeleteTermClick = async (term: Term) => {
-    setDeleting(true);
-    try {
-      await termsService.deleteTerm(term.id, profile || undefined);
-      setTermDeleteConfirm(null);
-    } catch (err) {
-      console.error("Error deleting term:", err);
-      alert("Failed to delete term");
-    } finally {
-      setDeleting(false);
-    }
-  };
-
-  const handleDeptModalClose = () => {
-    setIsDeptModalOpen(false);
-    setDepartmentToEdit(undefined);
-  };
-
-  const handleProgramModalClose = () => {
-    setIsProgramModalOpen(false);
-    setProgramToEdit(undefined);
-  };
-
-  const handleSectionModalClose = () => {
-    setIsSectionModalOpen(false);
-    setSectionToEdit(undefined);
-  };
-
-  const handleTermModalClose = () => {
-    setIsTermModalOpen(false);
-    setTermToEdit(undefined);
-  };
 
   const handleImportSuccess = (summary: ImportSummary) => {
     setImportSuccessMessage(
@@ -260,6 +56,30 @@ export function InstitutionSettings() {
   };
 
   // Institution settings handlers
+  const downloadAllTemplates = (format: "csv" | "json") => {
+    const types: ("users" | "courses" | "rooms")[] = ["users", "courses", "rooms"];
+    types.forEach((type) => {
+      try {
+        const content = format === "csv" 
+          ? dataImportService.getTemplateCSV(type) 
+          : dataImportService.getTemplateJSON(type);
+        const blob = new Blob([content], { 
+          type: format === "csv" ? "text/csv;charset=utf-8;" : "application/json;charset=utf-8;" 
+        });
+        const link = document.createElement("a");
+        const url = URL.createObjectURL(blob);
+        link.setAttribute("href", url);
+        link.setAttribute("download", `${type}_template.${format}`);
+        link.style.visibility = "hidden";
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      } catch (err) {
+        console.error(`Failed to download ${type} template:`, err);
+      }
+    });
+  };
+
   const handleUpdateInstitutionSettings = async () => {
     if (!profile) return;
 
@@ -285,10 +105,6 @@ export function InstitutionSettings() {
       setSavingSettings(false);
     }
   };
-
-  const filteredSections = selectedProgramId
-    ? sections.filter((s) => s.programId === selectedProgramId)
-    : sections;
 
   return (
     <div className="space-y-6">
@@ -394,385 +210,6 @@ export function InstitutionSettings() {
         </CardContent>
       </Card>
 
-      {/* Department Management Card */}
-      <Card className="border-border/50 shadow-sm overflow-hidden bg-white/80 backdrop-blur-sm">
-        <CardHeader className="bg-surface-alt/30 border-b border-border/50 flex items-center justify-between">
-          <CardTitle className="text-lg flex items-center gap-2">
-            <Building2 className="h-5 w-5 text-primary" />
-            Department Management
-          </CardTitle>
-          <Button
-            onClick={handleAddDeptClick}
-            className="h-9 gap-2"
-          >
-            <Plus className="h-4 w-4" />
-            Add Department
-          </Button>
-        </CardHeader>
-
-        <CardContent className="pt-6">
-          {loading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {[1, 2, 3, 4].map((i) => (
-                <div
-                  key={i}
-                  className="h-48 rounded-2xl bg-surface-alt/50 animate-pulse"
-                />
-              ))}
-            </div>
-          ) : departments.length === 0 ? (
-            <div className="text-center py-12 px-4 rounded-xl bg-surface/50">
-              <Building2 className="h-12 w-12 text-text-muted/30 mx-auto mb-3" />
-              <p className="text-text-muted mb-4">No departments created yet</p>
-              <Button onClick={handleAddDeptClick} variant="secondary">
-                Create First Department
-              </Button>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {departments.map((dept) => (
-                <div key={dept.id} className="relative">
-                  {deptDeleteConfirm === dept.id && (
-                    <div className="absolute inset-0 z-10 flex items-center justify-center rounded-2xl bg-black/50 backdrop-blur-sm">
-                      <div className="bg-white rounded-xl p-4 shadow-lg w-full mx-2">
-                        <div className="flex items-center gap-2 mb-4">
-                          <AlertTriangle className="h-5 w-5 text-red-600" />
-                          <h4 className="font-semibold text-text">Delete Department?</h4>
-                        </div>
-                        <p className="text-sm text-text-muted mb-4">
-                          This will permanently delete the department "{dept.name}". This action cannot be undone.
-                        </p>
-                        <div className="flex gap-2">
-                          <Button
-                            type="button"
-                            variant="secondary"
-                            className="flex-1 h-9"
-                            onClick={() => setDeptDeleteConfirm(null)}
-                          >
-                            Cancel
-                          </Button>
-                          <Button
-                            type="button"
-                            className="flex-1 h-9 bg-red-600 hover:bg-red-700"
-                            disabled={deleting}
-                            onClick={() => handleDeleteDeptClick(dept)}
-                          >
-                            {deleting ? "Deleting..." : "Delete"}
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                  <DepartmentCard
-                    department={dept}
-                    chairName={
-                      dept.chairUid
-                        ? teachers[dept.chairUid]?.displayName
-                        : undefined
-                    }
-                    isAdmin={true}
-                    onEdit={handleEditDeptClick}
-                    onDelete={(d) => setDeptDeleteConfirm(d.id)}
-                  />
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Program Management Card */}
-      <Card className="border-border/50 shadow-sm overflow-hidden bg-white/80 backdrop-blur-sm">
-        <CardHeader className="bg-surface-alt/30 border-b border-border/50 flex items-center justify-between">
-          <CardTitle className="text-lg flex items-center gap-2">
-            <BookOpen className="h-5 w-5 text-primary" />
-            Program Management
-          </CardTitle>
-          <Button
-            onClick={handleAddProgramClick}
-            className="h-9 gap-2"
-          >
-            <Plus className="h-4 w-4" />
-            Add Program
-          </Button>
-        </CardHeader>
-
-        <CardContent className="pt-6 space-y-4">
-          {departments.length > 0 && (
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-text-muted">Filter by Department</label>
-              <select
-                value={selectedDepartmentId}
-                onChange={(e) => setSelectedDepartmentId(e.target.value)}
-                className="w-full h-10 px-3 bg-surface-alt border border-border rounded-lg outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm appearance-none cursor-pointer"
-              >
-                <option value="">All Departments</option>
-                {departments.map((dept) => (
-                  <option key={dept.id} value={dept.id}>
-                    {dept.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
-
-          {loading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {[1, 2, 3, 4].map((i) => (
-                <div
-                  key={i}
-                  className="h-40 rounded-2xl bg-surface-alt/50 animate-pulse"
-                />
-              ))}
-            </div>
-          ) : programs.length === 0 ? (
-            <div className="text-center py-12 px-4 rounded-xl bg-surface/50">
-              <BookOpen className="h-12 w-12 text-text-muted/30 mx-auto mb-3" />
-              <p className="text-text-muted mb-4">No programs created yet</p>
-              <Button onClick={handleAddProgramClick} variant="secondary">
-                Create First Program
-              </Button>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {(selectedDepartmentId
-                ? programs.filter((p) => p.departmentId === selectedDepartmentId)
-                : programs
-              ).map((program) => (
-                <div key={program.id} className="relative">
-                  {programDeleteConfirm === program.id && (
-                    <div className="absolute inset-0 z-10 flex items-center justify-center rounded-2xl bg-black/50 backdrop-blur-sm">
-                      <div className="bg-white rounded-xl p-4 shadow-lg w-full mx-2">
-                        <div className="flex items-center gap-2 mb-4">
-                          <AlertTriangle className="h-5 w-5 text-red-600" />
-                          <h4 className="font-semibold text-text">Delete Program?</h4>
-                        </div>
-                        <p className="text-sm text-text-muted mb-4">
-                          This will permanently delete the program "{program.name}". This action cannot be undone.
-                        </p>
-                        <div className="flex gap-2">
-                          <Button
-                            type="button"
-                            variant="secondary"
-                            className="flex-1 h-9"
-                            onClick={() => setProgramDeleteConfirm(null)}
-                          >
-                            Cancel
-                          </Button>
-                          <Button
-                            type="button"
-                            className="flex-1 h-9 bg-red-600 hover:bg-red-700"
-                            disabled={deleting}
-                            onClick={() => handleDeleteProgramClick(program)}
-                          >
-                            {deleting ? "Deleting..." : "Delete"}
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                  <ProgramCard
-                    program={program}
-                    departmentName={
-                      departments.find((d) => d.id === program.departmentId)?.name
-                    }
-                    isAdmin={true}
-                    onEdit={handleEditProgramClick}
-                    onDelete={(p) => setProgramDeleteConfirm(p.id)}
-                  />
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Sections Management Card */}
-      <Card className="border-border/50 shadow-sm overflow-hidden bg-white/80 backdrop-blur-sm">
-        <CardHeader className="bg-surface-alt/30 border-b border-border/50 flex items-center justify-between">
-          <CardTitle className="text-lg flex items-center gap-2">
-            <Layers className="h-5 w-5 text-primary" />
-            Section Management
-          </CardTitle>
-          <Button
-            onClick={handleAddSectionClick}
-            className="h-9 gap-2"
-          >
-            <Plus className="h-4 w-4" />
-            Add Section
-          </Button>
-        </CardHeader>
-
-        <CardContent className="pt-6 space-y-4">
-          {programs.length > 0 && (
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-text-muted">Filter by Program</label>
-              <select
-                value={selectedProgramId}
-                onChange={(e) => setSelectedProgramId(e.target.value)}
-                className="w-full h-10 px-3 bg-surface-alt border border-border rounded-lg outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm appearance-none cursor-pointer"
-              >
-                {programs.map((prog) => (
-                  <option key={prog.id} value={prog.id}>
-                    {prog.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
-
-          {loading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {[1, 2, 3, 4].map((i) => (
-                <div
-                  key={i}
-                  className="h-40 rounded-2xl bg-surface-alt/50 animate-pulse"
-                />
-              ))}
-            </div>
-          ) : filteredSections.length === 0 ? (
-            <div className="text-center py-12 px-4 rounded-xl bg-surface/50">
-              <Layers className="h-12 w-12 text-text-muted/30 mx-auto mb-3" />
-              <p className="text-text-muted mb-4">No sections created for this program</p>
-              <Button onClick={handleAddSectionClick} variant="secondary">
-                Create First Section
-              </Button>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {filteredSections.map((section) => (
-                <div key={section.id} className="relative">
-                  {sectionDeleteConfirm === section.id && (
-                    <div className="absolute inset-0 z-10 flex items-center justify-center rounded-2xl bg-black/50 backdrop-blur-sm">
-                      <div className="bg-white rounded-xl p-4 shadow-lg w-full mx-2">
-                        <div className="flex items-center gap-2 mb-4">
-                          <AlertTriangle className="h-5 w-5 text-red-600" />
-                          <h4 className="font-semibold text-text">Delete Section?</h4>
-                        </div>
-                        <p className="text-sm text-text-muted mb-4">
-                          This will permanently delete the section "{section.name}". This action cannot be undone.
-                        </p>
-                        <div className="flex gap-2">
-                          <Button
-                            type="button"
-                            variant="secondary"
-                            className="flex-1 h-9"
-                            onClick={() => setSectionDeleteConfirm(null)}
-                          >
-                            Cancel
-                          </Button>
-                          <Button
-                            type="button"
-                            className="flex-1 h-9 bg-red-600 hover:bg-red-700"
-                            disabled={deleting}
-                            onClick={() => handleDeleteSectionClick(section)}
-                          >
-                            {deleting ? "Deleting..." : "Delete"}
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                  <SectionCard
-                    section={section}
-                    advisorName={
-                      section.advisorUid
-                        ? teachers[section.advisorUid]?.displayName
-                        : undefined
-                    }
-                    isAdmin={true}
-                    onEdit={handleEditSectionClick}
-                    onDelete={(s) => setSectionDeleteConfirm(s.id)}
-                  />
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Academic Terms Management Card */}
-      <Card className="border-border/50 shadow-sm overflow-hidden bg-white/80 backdrop-blur-sm">
-        <CardHeader className="bg-surface-alt/30 border-b border-border/50 flex items-center justify-between">
-          <CardTitle className="text-lg flex items-center gap-2">
-            <Calendar className="h-5 w-5 text-primary" />
-            Academic Terms Manager
-          </CardTitle>
-          <Button
-            onClick={handleAddTermClick}
-            className="h-9 gap-2"
-          >
-            <Plus className="h-4 w-4" />
-            Add Term
-          </Button>
-        </CardHeader>
-
-        <CardContent className="pt-6">
-          {loading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {[1, 2, 3, 4].map((i) => (
-                <div
-                  key={i}
-                  className="h-40 rounded-2xl bg-surface-alt/50 animate-pulse"
-                />
-              ))}
-            </div>
-          ) : terms.length === 0 ? (
-            <div className="text-center py-12 px-4 rounded-xl bg-surface/50">
-              <Calendar className="h-12 w-12 text-text-muted/30 mx-auto mb-3" />
-              <p className="text-text-muted mb-4">No academic terms created yet</p>
-              <Button onClick={handleAddTermClick} variant="secondary">
-                Create First Term
-              </Button>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {terms.map((term) => (
-                <div key={term.id} className="relative">
-                  {termDeleteConfirm === term.id && (
-                    <div className="absolute inset-0 z-10 flex items-center justify-center rounded-2xl bg-black/50 backdrop-blur-sm">
-                      <div className="bg-white rounded-xl p-4 shadow-lg w-full mx-2">
-                        <div className="flex items-center gap-2 mb-4">
-                          <AlertTriangle className="h-5 w-5 text-red-600" />
-                          <h4 className="font-semibold text-text">Delete Term?</h4>
-                        </div>
-                        <p className="text-sm text-text-muted mb-4">
-                          This will permanently delete the term "{term.academicYear} {term.semester}". This action cannot be undone.
-                        </p>
-                        <div className="flex gap-2">
-                          <Button
-                            type="button"
-                            variant="secondary"
-                            className="flex-1 h-9"
-                            onClick={() => setTermDeleteConfirm(null)}
-                          >
-                            Cancel
-                          </Button>
-                          <Button
-                            type="button"
-                            className="flex-1 h-9 bg-red-600 hover:bg-red-700"
-                            disabled={deleting}
-                            onClick={() => handleDeleteTermClick(term)}
-                          >
-                            {deleting ? "Deleting..." : "Delete"}
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                  <TermCard
-                    term={term}
-                    isAdmin={true}
-                    onEdit={handleEditTermClick}
-                    onDelete={(t) => setTermDeleteConfirm(t.id)}
-                  />
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
       {/* Data Import Management Card */}
       <Card className="border-border/50 shadow-sm overflow-hidden bg-white/80 backdrop-blur-sm">
         <CardHeader className="bg-surface-alt/30 border-b border-border/50 flex items-center justify-between">
@@ -805,14 +242,14 @@ export function InstitutionSettings() {
                 Import Data
               </Button>
               <Button
-                onClick={() => setIsImportModalOpen(true)}
+                onClick={() => downloadAllTemplates("csv")}
                 variant="secondary"
                 className="gap-2 h-12"
               >
                 Download CSV Template
               </Button>
               <Button
-                onClick={() => setIsImportModalOpen(true)}
+                onClick={() => downloadAllTemplates("json")}
                 variant="secondary"
                 className="gap-2 h-12"
               >
@@ -844,32 +281,6 @@ export function InstitutionSettings() {
       <BackupManager />
 
       {/* Modals */}
-      <AddEditDepartmentModal
-        isOpen={isDeptModalOpen}
-        onClose={handleDeptModalClose}
-        departmentToEdit={departmentToEdit}
-      />
-
-      <AddEditProgramModal
-        isOpen={isProgramModalOpen}
-        onClose={handleProgramModalClose}
-        programToEdit={programToEdit}
-        departments={departments}
-      />
-
-      <AddEditSectionModal
-        isOpen={isSectionModalOpen}
-        onClose={handleSectionModalClose}
-        programId={selectedProgramId}
-        sectionToEdit={sectionToEdit}
-      />
-
-      <AddEditTermModal
-        isOpen={isTermModalOpen}
-        onClose={handleTermModalClose}
-        termToEdit={termToEdit}
-      />
-
       <DataImportModal
         isOpen={isImportModalOpen}
         onClose={() => setIsImportModalOpen(false)}
@@ -878,3 +289,5 @@ export function InstitutionSettings() {
     </div>
   );
 }
+
+export default InstitutionSettings;

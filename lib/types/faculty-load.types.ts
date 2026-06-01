@@ -1,10 +1,15 @@
 export type LoadStatus = "underloaded" | "normal" | "overloaded";
 
 export interface LoadAssignment {
+  id?: string;
   courseCode: string;
   courseName: string;
   units: number;
   section: string;
+  roomId?: string;
+  dayOfWeek?: string;
+  startTime?: string;
+  endTime?: string;
 }
 
 export interface FacultyMember {
